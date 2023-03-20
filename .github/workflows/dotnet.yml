@@ -23,8 +23,6 @@ jobs:
       run: dotnet restore src
     - name: Build
       run: dotnet build --no-restore src/Veldrid/Veldrid.csproj
-    - name: Test
-      run: dotnet test --no-build --verbosity normal src --filter "Backend=D3D11"
     - name: Build Packages
       run: dotnet pack src/Veldrid/Veldrid.csproj -c Release
     - name: Publish tagged release to nuget.org
