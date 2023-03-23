@@ -90,7 +90,7 @@ namespace Veldrid.Vk
             uint scImageCount = 0;
             VkResult result = vkGetSwapchainImagesKHR(_gd.Device, deviceSwapchain, ref scImageCount, null);
             CheckResult(result);
-            if (_scImages == null)
+            if (_scImages == null || _scImages.Length < scImageCount)
             {
                 _scImages = new VkImage[(int)scImageCount];
             }
