@@ -62,6 +62,7 @@ namespace Veldrid.Vk
                     bufferInfos[i].offset = range.Offset;
                     bufferInfos[i].range = range.SizeInBytes;
                     descriptorWrites[i].pBufferInfo = &bufferInfos[i];
+                    rangedVkBuffer.RefCount.Increment();
                     _refCounts.Add(rangedVkBuffer.RefCount);
                 }
                 else if (type == VkDescriptorType.SampledImage)
@@ -72,6 +73,7 @@ namespace Veldrid.Vk
                     imageInfos[i].imageLayout = VkImageLayout.ShaderReadOnlyOptimal;
                     descriptorWrites[i].pImageInfo = &imageInfos[i];
                     _sampledTextures.Add(Util.AssertSubtype<Texture, VkTexture>(texView.Target));
+                    vkTexView.RefCount.Increment();
                     _refCounts.Add(vkTexView.RefCount);
                 }
                 else if (type == VkDescriptorType.StorageImage)
@@ -82,6 +84,7 @@ namespace Veldrid.Vk
                     imageInfos[i].imageLayout = VkImageLayout.General;
                     descriptorWrites[i].pImageInfo = &imageInfos[i];
                     _storageImages.Add(Util.AssertSubtype<Texture, VkTexture>(texView.Target));
+                    vkTexView.RefCount.Increment();
                     _refCounts.Add(vkTexView.RefCount);
                 }
                 else if (type == VkDescriptorType.Sampler)
@@ -89,6 +92,7 @@ namespace Veldrid.Vk
                     VkSampler sampler = Util.AssertSubtype<BindableResource, VkSampler>(boundResources[i]);
                     imageInfos[i].sampler = sampler.DeviceSampler;
                     descriptorWrites[i].pImageInfo = &imageInfos[i];
+                    sampler.RefCount.Increment();
                     _refCounts.Add(sampler.RefCount);
                 }
             }
@@ -108,6 +112,9 @@ namespace Veldrid.Vk
 
         public override void Dispose()
         {
+            foreach (ResourceRefCount rrc in _refCounts) {
+                rrc.Decrement();
+            }
             RefCount.Decrement();
         }
 
