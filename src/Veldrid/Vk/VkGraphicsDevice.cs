@@ -228,28 +228,20 @@ namespace Veldrid.Vk
             si.pSignalSemaphores = signalSemaphoresPtr;
             si.signalSemaphoreCount = signalSemaphoreCount;
 
-            Vulkan.VkFence vkFence = Vulkan.VkFence.Null;
             Vulkan.VkFence submissionFence = Vulkan.VkFence.Null;
             if (useExtraFence)
             {
-                vkFence = Util.AssertSubtype<Fence, VkFence>(fence).DeviceFence;
-                submissionFence = GetFreeSubmissionFence();
+                submissionFence = Util.AssertSubtype<Fence, VkFence>(fence).DeviceFence;
             }
             else
             {
-                vkFence = GetFreeSubmissionFence();
-                submissionFence = vkFence;
+                submissionFence = GetFreeSubmissionFence();
             }
 
             lock (_graphicsQueueLock)
             {
-                VkResult result = vkQueueSubmit(_graphicsQueue, 1, ref si, vkFence);
+                VkResult result = vkQueueSubmit(_graphicsQueue, 1, ref si, submissionFence);
                 CheckResult(result);
-                if (useExtraFence)
-                {
-                    result = vkQueueSubmit(_graphicsQueue, 0, null, submissionFence);
-                    CheckResult(result);
-                }
             }
 
             lock (_submittedFencesLock)
@@ -361,7 +353,7 @@ namespace Veldrid.Vk
                 if (vkSC.AcquireNextImage(_device, VkSemaphore.Null, vkSC.ImageAvailableFence))
                 {
                     Vulkan.VkFence fence = vkSC.ImageAvailableFence;
-                    vkWaitForFences(_device, 1, ref fence, true, ulong.MaxValue);
+                    vkWaitForFences(_device, 1, ref fence, true, 15000000000);
                     vkResetFences(_device, 1, ref fence);
                 }
             }
