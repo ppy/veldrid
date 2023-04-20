@@ -151,7 +151,7 @@ namespace Veldrid.D3D11
 
             if (AllowTearing && _canTear)
                 _flags |= SwapChainFlags.AllowTearing;
-            else if (_canCreateFrameLatencyWaitableObject)
+            if (_canCreateFrameLatencyWaitableObject)
                 _flags |= SwapChainFlags.FrameLatencyWaitableObject;
 
             if (_description.Source is Win32SwapchainSource win32Source)
