@@ -44,7 +44,7 @@ namespace Veldrid.MTL
         private readonly IntPtr _completionBlockLiteral;
 
         private readonly IMTLDisplayLink _displayLink;
-        private int _nextFrameReady;
+        private int _nextFrameReady = 1;
 
         public MTLDevice Device => _device;
         public MTLCommandQueue CommandQueue => _commandQueue;
