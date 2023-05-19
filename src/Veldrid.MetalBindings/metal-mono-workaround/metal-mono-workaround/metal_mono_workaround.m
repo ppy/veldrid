@@ -8,11 +8,14 @@
 - (nonnull instancetype)initWithCallback:(nonnull CADisplayLinkCallback)callback {
     _displayLink = [CADisplayLink displayLinkWithTarget:self selector: @selector(onDisplayLinkCallback:)];
     _callback = callback;
+
+    [_displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSRunLoopCommonModes];
+
     return self;
 }
 
 - (void)onDisplayLinkCallback:(id)displayLink {
-    _callback((void*)&self);
+    _callback((__bridge void*)self);
 }
 
 @end
