@@ -278,9 +278,9 @@ namespace Veldrid
         /// In contrast to <see cref="Swapchain.SyncToVerticalBlank"/>, this allows the next frame to be rendered as soon
         /// as the next GPU buffer becomes available without incurring the extra frame of latency of <see cref="Swapchain.SyncToVerticalBlank"/>.
         /// </summary>
-        public void WaitForNextFrameReady() => WaitForNextFrameReadyCore();
+        public bool WaitForNextFrameReady() => WaitForNextFrameReadyCore();
 
-        private protected abstract void WaitForNextFrameReadyCore();
+        private protected abstract bool WaitForNextFrameReadyCore();
 
         /// <summary>
         /// Gets the maximum sample count supported by the given <see cref="PixelFormat"/>.

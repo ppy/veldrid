@@ -704,9 +704,10 @@ namespace Veldrid.D3D11
         {
         }
 
-        private protected override void WaitForNextFrameReadyCore()
+        private protected override bool WaitForNextFrameReadyCore()
         {
             _mainSwapchain.WaitForNextFrameReady();
+            return true;
         }
 
         public override bool GetD3D11Info(out BackendInfoD3D11 info)

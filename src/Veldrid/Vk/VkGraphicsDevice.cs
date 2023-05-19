@@ -1087,8 +1087,9 @@ namespace Veldrid.Vk
             CheckSubmittedFences();
         }
 
-        private protected override void WaitForNextFrameReadyCore()
+        private protected override bool WaitForNextFrameReadyCore()
         {
+            return true;
         }
 
         public override TextureSampleCount GetSampleCountLimit(PixelFormat format, bool depthFormat)

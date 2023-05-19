@@ -44,7 +44,7 @@ namespace Veldrid.MTL
         private readonly IntPtr _completionBlockLiteral;
 
         private readonly IMTLDisplayLink _displayLink;
-        private readonly AutoResetEvent _nextFrameReadyEvent;
+        private int _nextFrameReady;
 
         public MTLDevice Device => _device;
         public MTLCommandQueue CommandQueue => _commandQueue;
@@ -107,11 +107,7 @@ namespace Veldrid.MTL
                 _displayLink = new MTLCADisplayLink();
             }
 
-            if (_displayLink != null)
-            {
-                _displayLink.Callback += OnDisplayLinkCallback;
-                _nextFrameReadyEvent = new AutoResetEvent(true);
-            }
+            _displayLink.Callback += OnDisplayLinkCallback;
 
             _completionHandlerFuncPtr = Marshal.GetFunctionPointerForDelegate<MTLCommandBufferHandler>(_completionHandler);
             _completionBlockDescriptor = Marshal.AllocHGlobal(Unsafe.SizeOf<BlockDescriptor>());
@@ -227,14 +223,14 @@ namespace Veldrid.MTL
             }
         }
 
-        private protected override void WaitForNextFrameReadyCore()
+        private protected override bool WaitForNextFrameReadyCore()
         {
-            _nextFrameReadyEvent.WaitOne(TimeSpan.FromSeconds(1)); // Should never time out.
+            return Interlocked.Exchange(ref _nextFrameReady, 0) == 1;
         }
 
         private void OnDisplayLinkCallback()
         {
-            _nextFrameReadyEvent.Set();
+            Interlocked.Exchange(ref _nextFrameReady, 1);
         }
 
         public override TextureSampleCount GetSampleCountLimit(PixelFormat format, bool depthFormat)
@@ -471,7 +467,7 @@ namespace Veldrid.MTL
             Marshal.FreeHGlobal(_completionBlockDescriptor);
             Marshal.FreeHGlobal(_completionBlockLiteral);
 
-            _displayLink?.Dispose();
+            _displayLink.Dispose();
         }
 
         public override bool GetMetalInfo(out BackendInfoMetal info)
