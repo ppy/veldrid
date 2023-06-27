@@ -120,8 +120,14 @@ namespace Veldrid.D3D11
                 ? Format.B8G8R8A8_UNorm_SRgb
                 : Format.B8G8R8A8_UNorm;
 
-            using (IDXGIFactory5 dxgiFactory5 = _gd.Adapter.GetParent<IDXGIFactory5>())
+            if (_gd.Adapter.CheckInterfaceSupport<IDXGIFactory5>())
+            {
+                // not sure if we really this, but just to be safe,
+                // we'll call inner check method from the factory.
+                using IDXGIFactory5 dxgiFactory5 = _gd.Adapter.GetParent<IDXGIFactory5>();
                 _canTear = dxgiFactory5?.PresentAllowTearing == true;
+            }
+            else _canTear = false;
 
             using (IDXGIFactory3 dxgiFactory3 = _gd.Adapter.GetParent<IDXGIFactory3>())
                 _canCreateFrameLatencyWaitableObject = dxgiFactory3 != null;
@@ -147,11 +153,14 @@ namespace Veldrid.D3D11
             _frameLatencyWaitHandle?.Dispose();
             _frameLatencyWaitHandle = null;
 
-            _flags = SwapChainFlags.None;
+            // FlipDiscard is only supported on DX1.4+
+            bool isFlipSupported = _gd.Adapter.CheckInterfaceSupport<IDXGIFactory4>();
+            var swapEffect = isFlipSupported ? SwapEffect.FlipDiscard : SwapEffect.Discard;
 
+            _flags = SwapChainFlags.None;
             if (AllowTearing && _canTear)
                 _flags |= SwapChainFlags.AllowTearing;
-            else if (_canCreateFrameLatencyWaitableObject)
+            if (_canCreateFrameLatencyWaitableObject && swapEffect != SwapEffect.Discard)
                 _flags |= SwapChainFlags.FrameLatencyWaitableObject;
 
             if (_description.Source is Win32SwapchainSource win32Source)
@@ -164,7 +173,7 @@ namespace Veldrid.D3D11
                         (int)_width, (int)_height, _colorFormat),
                     OutputWindow = win32Source.Hwnd,
                     SampleDescription = new SampleDescription(1, 0),
-                    SwapEffect = SwapEffect.FlipDiscard,
+                    SwapEffect = swapEffect,
                     BufferUsage = Usage.RenderTargetOutput,
                     Flags = _flags
                 };
