@@ -24,8 +24,6 @@ namespace Veldrid.MTL
         private readonly bool[] _supportedSampleCounts;
         private BackendInfoMetal _metalInfo;
 
-        private readonly object _submittedCommandsLock = new object();
-        private readonly Dictionary<MTLCommandBuffer, MTLCommandList> _submittedCLs = new Dictionary<MTLCommandBuffer, MTLCommandList>();
         private MTLCommandBuffer _latestSubmittedCB;
 
         private readonly object _resetEventsLock = new object();
@@ -200,19 +198,8 @@ namespace Veldrid.MTL
 
         private void OnCommandBufferCompleted(IntPtr block, MTLCommandBuffer cb)
         {
-            lock (_submittedCommandsLock)
-            {
-                MTLCommandList cl = _submittedCLs[cb];
-                _submittedCLs.Remove(cb);
-                cl.OnCompleted(cb);
-
-                if (_latestSubmittedCB.NativePtr == cb.NativePtr)
-                {
-                    _latestSubmittedCB = default(MTLCommandBuffer);
-                }
-            }
-
-            ObjectiveCRuntime.release(cb.NativePtr);
+            if (_latestSubmittedCB.NativePtr == cb.NativePtr)
+                _latestSubmittedCB = default(MTLCommandBuffer);
         }
 
         // Xamarin AOT requires native callbacks be static.
@@ -233,16 +220,12 @@ namespace Veldrid.MTL
             MTLCommandList mtlCL = Util.AssertSubtype<CommandList, MTLCommandList>(commandList);
 
             mtlCL.CommandBuffer.addCompletedHandler(_completionBlockLiteral);
-            lock (_submittedCommandsLock)
+            if (fence != null)
             {
-                if (fence != null)
-                {
-                    mtlCL.SetCompletionFence(Util.AssertSubtype<Fence, MTLFence>(fence));
-                }
-
-                _submittedCLs.Add(mtlCL.CommandBuffer, mtlCL);
-                _latestSubmittedCB = mtlCL.Commit();
+                mtlCL.SetCompletionFence(Util.AssertSubtype<Fence, MTLFence>(fence));
             }
+
+            _latestSubmittedCB = mtlCL.Commit();
         }
 
         private protected override void WaitForNextFrameReadyCore()
@@ -347,12 +330,9 @@ namespace Veldrid.MTL
             IntPtr currentDrawablePtr = mtlSC.CurrentDrawable.NativePtr;
             if (currentDrawablePtr != IntPtr.Zero)
             {
-                using (NSAutoreleasePool.Begin())
-                {
-                    MTLCommandBuffer submitCB = _commandQueue.commandBuffer();
-                    submitCB.presentDrawable(currentDrawablePtr);
-                    submitCB.commit();
-                }
+                MTLCommandBuffer submitCB = _commandQueue.commandBuffer();
+                submitCB.presentDrawable(currentDrawablePtr);
+                submitCB.commit();
 
                 mtlSC.InvalidateDrawable();
             }
@@ -423,12 +403,8 @@ namespace Veldrid.MTL
 
         private protected override void WaitForIdleCore()
         {
-            MTLCommandBuffer lastCB = default(MTLCommandBuffer);
-            lock (_submittedCommandsLock)
-            {
-                lastCB = _latestSubmittedCB;
-                ObjectiveCRuntime.retain(lastCB.NativePtr);
-            }
+            MTLCommandBuffer lastCB = _latestSubmittedCB;
+            ObjectiveCRuntime.retain(lastCB.NativePtr);
 
             if (lastCB.NativePtr != IntPtr.Zero && lastCB.status != MTLCommandBufferStatus.Completed)
             {
@@ -621,7 +597,7 @@ namespace Veldrid.MTL
                 if (_unalignedBufferCopyPipeline.IsNull)
                 {
                     MTLComputePipelineDescriptor descriptor = MTLUtil.AllocInit<MTLComputePipelineDescriptor>(
-                       nameof(MTLComputePipelineDescriptor));
+                        nameof(MTLComputePipelineDescriptor));
                     MTLPipelineBufferDescriptor buffer0 = descriptor.buffers[0];
                     buffer0.mutability = MTLMutability.Mutable;
                     MTLPipelineBufferDescriptor buffer1 = descriptor.buffers[1];
