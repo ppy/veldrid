@@ -70,16 +70,7 @@ namespace Veldrid.MTL
 
         public override void Begin()
         {
-            if (_cb.NativePtr != IntPtr.Zero)
-            {
-                ObjectiveCRuntime.release(_cb.NativePtr);
-            }
-
-            using (NSAutoreleasePool.Begin())
-            {
-                _cb = _gd.CommandQueue.commandBuffer();
-                ObjectiveCRuntime.retain(_cb.NativePtr);
-            }
+            _cb = _gd.CommandQueue.commandBuffer();
 
             ClearCachedState();
         }
