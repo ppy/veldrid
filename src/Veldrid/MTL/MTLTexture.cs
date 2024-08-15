@@ -8,7 +8,7 @@ namespace Veldrid.MTL
         /// <summary>
         ///     The native MTLTexture object. This property is only valid for non-staging Textures.
         /// </summary>
-        public MTLTexture DeviceTexture { get; }
+        public virtual MTLTexture DeviceTexture { get; }
 
         /// <summary>
         ///     The staging MTLBuffer object. This property is only valid for staging Textures.
@@ -33,8 +33,8 @@ namespace Veldrid.MTL
 
         public override TextureSampleCount SampleCount { get; }
         public override bool IsDisposed => disposed;
-        public MTLPixelFormat MtlPixelFormat { get; }
-        public MTLTextureType MtlTextureType { get; }
+        public virtual MTLPixelFormat MtlPixelFormat { get; }
+        public virtual MTLTextureType MtlTextureType { get; }
         public MTLStorageMode MtlStorageMode { get; }
 
         public unsafe void* StagingBufferPointer { get; private set; }
@@ -143,6 +143,10 @@ namespace Veldrid.MTL
 
             MtlPixelFormat = MtlFormats.VdToMtlPixelFormat(Format, false);
             MtlTextureType = MTLTextureType.Type2D;
+        }
+
+        protected MtlTexture()
+        {
         }
 
         internal uint GetSubresourceSize(uint mipLevel, uint arrayLayer)

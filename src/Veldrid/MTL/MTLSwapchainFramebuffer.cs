@@ -18,10 +18,10 @@ namespace Veldrid.MTL
         private readonly PixelFormat colorFormat;
 
         private readonly PixelFormat? depthFormat;
-        private MtlTexture colorTexture;
+        private readonly MtlSwapchainTexture colorTexture = new MtlSwapchainTexture();
         private MtlTexture depthTexture;
 
-        private FramebufferAttachment[] colorTargets;
+        private readonly FramebufferAttachment[] colorTargets;
         private FramebufferAttachment? depthTarget;
 
         public MtlSwapchainFramebuffer(
@@ -44,6 +44,8 @@ namespace Veldrid.MTL
 
             var colorAttachment = new OutputAttachmentDescription(colorFormat);
 
+            colorTargets = new[] { new FramebufferAttachment(colorTexture, 0) };
+
             OutputDescription = new OutputDescription(depthAttachment, colorAttachment);
         }
 
@@ -59,8 +61,7 @@ namespace Veldrid.MTL
 
         public void UpdateTextures(CAMetalDrawable drawable, CGSize size)
         {
-            colorTexture = new MtlTexture(drawable, size, colorFormat);
-            colorTargets = new[] { new FramebufferAttachment(colorTexture, 0) };
+            colorTexture.SetDrawable(drawable, size, colorFormat);
 
             if (depthFormat.HasValue && (size.width != depthTexture?.Width || size.height != depthTexture?.Height))
                 recreateDepthTexture((uint)size.width, (uint)size.height);
