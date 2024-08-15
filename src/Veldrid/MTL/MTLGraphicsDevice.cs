@@ -49,7 +49,7 @@ namespace Veldrid.MTL
         private readonly bool[] supportedSampleCounts;
 
         private readonly object submittedCommandsLock = new object();
-        private readonly CommandBufferDictionary<MtlCommandList> submittedCLs = new CommandBufferDictionary<MtlCommandList>();
+        private readonly CommandBufferUsageList<MtlCommandList> submittedCLs = new CommandBufferUsageList<MtlCommandList>();
 
         private readonly object resetEventsLock = new object();
         private readonly List<ManualResetEvent[]> resetEvents = new List<ManualResetEvent[]>();
@@ -385,7 +385,7 @@ namespace Veldrid.MTL
         {
             lock (submittedCommandsLock)
             {
-                if (submittedCLs.TryRemove(cb, out MtlCommandList cl))
+                foreach (var cl in submittedCLs.EnumerateAndRemove(cb))
                     cl.OnCompleted(cb);
 
                 if (latestSubmittedCb.NativePtr == cb.NativePtr)
