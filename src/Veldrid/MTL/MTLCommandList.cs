@@ -15,9 +15,9 @@ namespace Veldrid.MTL
         private readonly MtlGraphicsDevice gd;
 
         private readonly List<MtlBuffer> availableStagingBuffers = new List<MtlBuffer>();
-        private readonly Dictionary<MTLCommandBuffer, List<MtlBuffer>> submittedStagingBuffers = new Dictionary<MTLCommandBuffer, List<MtlBuffer>>();
+        private readonly CommandBufferDictionary<List<MtlBuffer>> submittedStagingBuffers = new CommandBufferDictionary<List<MtlBuffer>>();
         private readonly object submittedCommandsLock = new object();
-        private readonly Dictionary<MTLCommandBuffer, MtlFence> completionFences = new Dictionary<MTLCommandBuffer, MtlFence>();
+        private readonly CommandBufferDictionary<MtlFence> completionFences = new CommandBufferDictionary<MtlFence>();
 
         private readonly Dictionary<UIntPtr, DeviceBufferRange> boundVertexBuffers = new Dictionary<UIntPtr, DeviceBufferRange>();
         private readonly Dictionary<UIntPtr, DeviceBufferRange> boundFragmentBuffers = new Dictionary<UIntPtr, DeviceBufferRange>();
@@ -85,11 +85,13 @@ namespace Veldrid.MTL
 
                 lock (submittedStagingBuffers)
                 {
-                    foreach (var buffer in availableStagingBuffers) buffer.Dispose();
+                    foreach (var buffer in availableStagingBuffers)
+                        buffer.Dispose();
 
-                    foreach (var kvp in submittedStagingBuffers)
+                    foreach (var (_, buffers) in submittedStagingBuffers)
                     {
-                        foreach (var buffer in kvp.Value) buffer.Dispose();
+                        foreach (var buffer in buffers)
+                            buffer.Dispose();
                     }
 
                     submittedStagingBuffers.Clear();
@@ -160,8 +162,8 @@ namespace Veldrid.MTL
         {
             lock (submittedCommandsLock)
             {
-                Debug.Assert(!completionFences.ContainsKey(cb));
-                completionFences[cb] = fence;
+                Debug.Assert(!completionFences.TryGetValue(cb, out _));
+                completionFences.Add(cb, fence);
             }
         }
 
@@ -169,17 +171,11 @@ namespace Veldrid.MTL
         {
             lock (submittedCommandsLock)
             {
-                if (completionFences.TryGetValue(cb, out var completionFence))
-                {
-                    completionFence.Set();
-                    completionFences.Remove(cb);
-                }
+                if (completionFences.TryRemove(cb, out var fence))
+                    fence.Set();
 
-                if (submittedStagingBuffers.TryGetValue(cb, out var bufferList))
-                {
-                    availableStagingBuffers.AddRange(bufferList);
-                    submittedStagingBuffers.Remove(cb);
-                }
+                if (submittedStagingBuffers.TryRemove(cb, out var buffers))
+                    availableStagingBuffers.AddRange(buffers);
             }
         }
 
@@ -1268,7 +1264,8 @@ namespace Veldrid.MTL
 
             lock (submittedCommandsLock)
             {
-                if (!submittedStagingBuffers.TryGetValue(cb, out var bufferList)) submittedStagingBuffers[cb] = bufferList = new List<MtlBuffer>();
+                if (!submittedStagingBuffers.TryGetValue(cb, out var bufferList))
+                    submittedStagingBuffers.Add(cb, bufferList = new List<MtlBuffer>());
 
                 bufferList.Add(staging);
             }
