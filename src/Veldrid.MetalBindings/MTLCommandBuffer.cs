@@ -5,7 +5,7 @@ using static Veldrid.MetalBindings.ObjectiveCRuntime;
 namespace Veldrid.MetalBindings
 {
     [StructLayout(LayoutKind.Sequential)]
-    public struct MTLCommandBuffer
+    public struct MTLCommandBuffer : IEquatable<MTLCommandBuffer>
     {
         public readonly IntPtr NativePtr;
 
@@ -29,6 +29,7 @@ namespace Veldrid.MetalBindings
 
         public void addCompletedHandler(MTLCommandBufferHandler block)
             => objc_msgSend(NativePtr, sel_addCompletedHandler, block);
+
         public void addCompletedHandler(IntPtr block)
             => objc_msgSend(NativePtr, sel_addCompletedHandler, block);
 
@@ -42,5 +43,20 @@ namespace Veldrid.MetalBindings
         private static readonly Selector sel_waitUntilCompleted = "waitUntilCompleted";
         private static readonly Selector sel_addCompletedHandler = "addCompletedHandler:";
         private static readonly Selector sel_status = "status";
+
+        public bool Equals(MTLCommandBuffer other)
+        {
+            return NativePtr == other.NativePtr;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is MTLCommandBuffer other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            return NativePtr.GetHashCode();
+        }
     }
 }

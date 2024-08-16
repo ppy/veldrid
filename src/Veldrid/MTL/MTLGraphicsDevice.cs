@@ -49,7 +49,7 @@ namespace Veldrid.MTL
         private readonly bool[] supportedSampleCounts;
 
         private readonly object submittedCommandsLock = new object();
-        private readonly Dictionary<MTLCommandBuffer, MtlCommandList> submittedCLs = new Dictionary<MTLCommandBuffer, MtlCommandList>();
+        private readonly CommandBufferUsageList<MtlCommandList> submittedCLs = new CommandBufferUsageList<MtlCommandList>();
 
         private readonly object resetEventsLock = new object();
         private readonly List<ManualResetEvent[]> resetEvents = new List<ManualResetEvent[]>();
@@ -385,11 +385,11 @@ namespace Veldrid.MTL
         {
             lock (submittedCommandsLock)
             {
-                var cl = submittedCLs[cb];
-                submittedCLs.Remove(cb);
-                cl.OnCompleted(cb);
+                foreach (var cl in submittedCLs.EnumerateAndRemove(cb))
+                    cl.OnCompleted(cb);
 
-                if (latestSubmittedCb.NativePtr == cb.NativePtr) latestSubmittedCb = default;
+                if (latestSubmittedCb.NativePtr == cb.NativePtr)
+                    latestSubmittedCb = default;
             }
 
             ObjectiveCRuntime.release(cb.NativePtr);
@@ -459,7 +459,8 @@ namespace Veldrid.MTL
 
             lock (submittedCommandsLock)
             {
-                if (fence != null) mtlCl.SetCompletionFence(mtlCl.CommandBuffer, Util.AssertSubtype<Fence, MtlFence>(fence));
+                if (fence != null)
+                    mtlCl.SetCompletionFence(mtlCl.CommandBuffer, Util.AssertSubtype<Fence, MtlFence>(fence));
 
                 submittedCLs.Add(mtlCl.CommandBuffer, mtlCl);
                 latestSubmittedCb = mtlCl.Commit();
