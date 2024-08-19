@@ -128,23 +128,6 @@ namespace Veldrid.MTL
                 (Usage & TextureUsage.Cubemap) != 0);
         }
 
-        public MtlTexture(CAMetalDrawable drawable, CGSize size, PixelFormat format)
-        {
-            DeviceTexture = drawable.texture;
-            Width = (uint)size.width;
-            Height = (uint)size.height;
-            Depth = 1;
-            ArrayLayers = 1;
-            MipLevels = 1;
-            Format = format;
-            Usage = TextureUsage.RenderTarget;
-            Type = TextureType.Texture2D;
-            SampleCount = TextureSampleCount.Count1;
-
-            MtlPixelFormat = MtlFormats.VdToMtlPixelFormat(Format, false);
-            MtlTextureType = MTLTextureType.Type2D;
-        }
-
         protected MtlTexture()
         {
         }
