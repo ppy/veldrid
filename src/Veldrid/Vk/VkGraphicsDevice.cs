@@ -772,6 +772,13 @@ namespace Veldrid.Vk
 
             if (availableInstanceExtensions.Contains(CommonStrings.VkKhrPortabilitySubset)) surfaceExtensions.Add(CommonStrings.VkKhrPortabilitySubset);
 
+            bool hasPortabilityEnumeration = false;
+            if (availableInstanceExtensions.Contains(CommonStrings.VkKhrPortabilityEnumeration))
+            {
+                hasPortabilityEnumeration = true;
+                surfaceExtensions.Add(CommonStrings.VkKhrPortabilityEnumeration);
+            }
+
             if (availableInstanceExtensions.Contains(CommonStrings.VkKhrSurfaceExtensionName)) surfaceExtensions.Add(CommonStrings.VkKhrSurfaceExtensionName);
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -844,6 +851,11 @@ namespace Veldrid.Vk
 
             instanceCi.enabledExtensionCount = instanceExtensions.Count;
             instanceCi.ppEnabledExtensionNames = (byte**)instanceExtensions.Data;
+
+            if (hasPortabilityEnumeration && RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+                // Required for MoltenVK to work on Apple Silicon.
+                instanceCi.flags |= (uint)VkInstanceCreateFlagBits.PortabilityBitKHR;
+            }
 
             instanceCi.enabledLayerCount = instanceLayers.Count;
             if (instanceLayers.Count > 0) instanceCi.ppEnabledLayerNames = (byte**)instanceLayers.Data;
