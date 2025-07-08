@@ -27,6 +27,12 @@ namespace Veldrid.Vk
 
         public override bool IsClipSpaceYInverted => !standardClipYDirection;
 
+        public override bool AllowTearing
+        {
+            get => mainSwapchain.AllowTearing;
+            set => mainSwapchain.AllowTearing = value;
+        }
+
         public override Swapchain MainSwapchain => mainSwapchain;
 
         public override GraphicsDeviceFeatures Features { get; }

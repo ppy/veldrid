@@ -40,6 +40,22 @@ namespace Veldrid.Vk
             }
         }
 
+        private bool allowTearing;
+
+        public bool AllowTearing
+        {
+            get => allowTearing;
+            set
+            {
+                if (allowTearing == value)
+                    return;
+
+                allowTearing = value;
+
+                recreateAndReacquire(framebuffer.Width, framebuffer.Height);
+            }
+        }
+
         private readonly VkGraphicsDevice gd;
         private readonly VkSwapchainFramebuffer framebuffer;
         private readonly uint presentQueueIndex;
@@ -203,14 +219,15 @@ namespace Veldrid.Vk
 
             if (syncToVBlank)
             {
-                if (presentModes.Contains(VkPresentModeKHR.FifoRelaxedKHR)) presentMode = VkPresentModeKHR.FifoRelaxedKHR;
+                if (presentModes.Contains(VkPresentModeKHR.FifoRelaxedKHR))
+                    presentMode = VkPresentModeKHR.FifoRelaxedKHR;
             }
-            else
-            {
-                if (presentModes.Contains(VkPresentModeKHR.MailboxKHR))
-                    presentMode = VkPresentModeKHR.MailboxKHR;
-                else if (presentModes.Contains(VkPresentModeKHR.ImmediateKHR)) presentMode = VkPresentModeKHR.ImmediateKHR;
-            }
+            else if (allowTearing && presentModes.Contains(VkPresentModeKHR.ImmediateKHR))
+                presentMode = VkPresentModeKHR.ImmediateKHR;
+            else if (presentModes.Contains(VkPresentModeKHR.MailboxKHR))
+                presentMode = VkPresentModeKHR.MailboxKHR;
+            else if (presentModes.Contains(VkPresentModeKHR.ImmediateKHR))
+                presentMode = VkPresentModeKHR.ImmediateKHR;
 
             uint maxImageCount = surfaceCapabilities.maxImageCount == 0 ? uint.MaxValue : surfaceCapabilities.maxImageCount;
             uint imageCount = Math.Min(maxImageCount, surfaceCapabilities.minImageCount + 1);
