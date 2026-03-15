@@ -843,6 +843,11 @@ namespace Veldrid.OpenGL
                 case PixelFormat.R10G10B10A2UNorm:
                     return backend == GraphicsBackend.OpenGL;
 
+                case PixelFormat.D24UNormS8UInt:
+                    return extensions.GLVersion(3, 0) || extensions.GLESVersion(3, 0)
+                           || extensions.IsExtensionSupported("GL_OES_packed_depth_stencil")
+                           || extensions.IsExtensionSupported("GL_ARB_framebuffer_object");
+
                 default:
                     return true;
             }

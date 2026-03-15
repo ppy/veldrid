@@ -33,6 +33,7 @@ namespace Veldrid.OpenGL
         public readonly bool MultiDrawIndirect;
         public readonly bool StorageBuffers;
         public readonly bool AnisotropicFilter;
+        public readonly bool OesPackedDepthStencil;
         private readonly HashSet<string> extensions;
         private readonly GraphicsBackend backend;
         private readonly int major;
@@ -90,6 +91,13 @@ namespace Veldrid.OpenGL
             ArbUniformBufferObject = IsExtensionSupported("GL_ARB_uniform_buffer_object");
 
             AnisotropicFilter = IsExtensionSupported("GL_EXT_texture_filter_anisotropic") || IsExtensionSupported("GL_ARB_texture_filter_anisotropic");
+
+            // D24_UNorm_S8_UInt (GL_DEPTH24_STENCIL8) is core in GL 3.0+ and GLES 3.0+.
+            // On desktop GL 2.x, GL_ARB_framebuffer_object provides it.
+            // On GLES 2.x, it requires the GL_OES_packed_depth_stencil extension.
+            OesPackedDepthStencil = GLVersion(3, 0) || GLESVersion(3, 0)
+                                    || IsExtensionSupported("GL_ARB_framebuffer_object")
+                                    || IsExtensionSupported("GL_OES_packed_depth_stencil");
         }
 
         /// <summary>
