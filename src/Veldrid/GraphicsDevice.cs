@@ -793,6 +793,9 @@ namespace Veldrid
                     $"The data size given to UpdateBuffer is too large. The given buffer can only hold {buffer.SizeInBytes} total bytes. The requested update would require {bufferOffsetInBytes + sizeInBytes} bytes.");
             }
 
+            if (sizeInBytes == 0)
+                return;
+
             UpdateBufferCore(buffer, bufferOffsetInBytes, source, sizeInBytes);
         }
 
