@@ -226,6 +226,81 @@ namespace Veldrid.Vk
             }
         }
 
+        private protected override void UpdateBufferCore(DeviceBuffer buffer, uint bufferOffsetInBytes, IntPtr source, uint sizeInBytes)
+        {
+            VkBuffer stagingBuffer = getStagingBuffer(sizeInBytes);
+            gd.UpdateBuffer(stagingBuffer, 0, source, sizeInBytes);
+            CopyBuffer(stagingBuffer, 0, buffer, bufferOffsetInBytes, sizeInBytes);
+        }
+
+        protected override void CopyBufferCore(
+            DeviceBuffer source,
+            uint sourceOffset,
+            DeviceBuffer destination,
+            uint destinationOffset,
+            uint sizeInBytes)
+        {
+            ensureNoRenderPass();
+
+            VkBuffer srcVkBuffer = Util.AssertSubtype<DeviceBuffer, VkBuffer>(source);
+            currentStagingInfo.Resources.Add(srcVkBuffer.RefCount);
+            VkBuffer dstVkBuffer = Util.AssertSubtype<DeviceBuffer, VkBuffer>(destination);
+            currentStagingInfo.Resources.Add(dstVkBuffer.RefCount);
+
+            VkBufferCopy region = new VkBufferCopy
+            {
+                srcOffset = sourceOffset,
+                dstOffset = destinationOffset,
+                size = sizeInBytes
+            };
+
+            vkCmdCopyBuffer(CommandBuffer, srcVkBuffer.DeviceBuffer, dstVkBuffer.DeviceBuffer, 1, ref region);
+
+            bool needToProtectUniform = destination.Usage.HasFlag(BufferUsage.UniformBuffer);
+
+            VkMemoryBarrier barrier;
+            barrier.sType = VkStructureType.MemoryBarrier;
+            barrier.srcAccessMask = VkAccessFlags.TransferWrite;
+            barrier.dstAccessMask = needToProtectUniform ? VkAccessFlags.UniformRead : VkAccessFlags.VertexAttributeRead;
+            barrier.pNext = null;
+            vkCmdPipelineBarrier(
+                CommandBuffer,
+                VkPipelineStageFlags.Transfer, needToProtectUniform
+                    ? VkPipelineStageFlags.VertexShader | VkPipelineStageFlags.ComputeShader |
+                      VkPipelineStageFlags.FragmentShader | VkPipelineStageFlags.GeometryShader |
+                      VkPipelineStageFlags.TessellationControlShader | VkPipelineStageFlags.TessellationEvaluationShader
+                    : VkPipelineStageFlags.VertexInput,
+                VkDependencyFlags.None,
+                1, ref barrier,
+                0, null,
+                0, null);
+        }
+
+        protected override void CopyTextureCore(
+            Texture source,
+            uint srcX, uint srcY, uint srcZ,
+            uint srcMipLevel,
+            uint srcBaseArrayLayer,
+            Texture destination,
+            uint dstX, uint dstY, uint dstZ,
+            uint dstMipLevel,
+            uint dstBaseArrayLayer,
+            uint width, uint height, uint depth,
+            uint layerCount)
+        {
+            ensureNoRenderPass();
+            CopyTextureCore_VkCommandBuffer(
+                CommandBuffer,
+                source, srcX, srcY, srcZ, srcMipLevel, srcBaseArrayLayer,
+                destination, dstX, dstY, dstZ, dstMipLevel, dstBaseArrayLayer,
+                width, height, depth, layerCount);
+
+            VkTexture srcVkTexture = Util.AssertSubtype<Texture, VkTexture>(source);
+            currentStagingInfo.Resources.Add(srcVkTexture.RefCount);
+            VkTexture dstVkTexture = Util.AssertSubtype<Texture, VkTexture>(destination);
+            currentStagingInfo.Resources.Add(dstVkTexture.RefCount);
+        }
+
         internal static void CopyTextureCore_VkCommandBuffer(
             VkCommandBuffer cb,
             Texture source,
@@ -631,68 +706,6 @@ namespace Veldrid.Vk
                 computeResourceSetsChanged[slot] = true;
                 Util.AssertSubtype<ResourceSet, VkResourceSet>(rs);
             }
-        }
-
-        protected override void CopyBufferCore(
-            DeviceBuffer source,
-            uint sourceOffset,
-            DeviceBuffer destination,
-            uint destinationOffset,
-            uint sizeInBytes)
-        {
-            ensureNoRenderPass();
-
-            var srcVkBuffer = Util.AssertSubtype<DeviceBuffer, VkBuffer>(source);
-            currentStagingInfo.Resources.Add(srcVkBuffer.RefCount);
-            var dstVkBuffer = Util.AssertSubtype<DeviceBuffer, VkBuffer>(destination);
-            currentStagingInfo.Resources.Add(dstVkBuffer.RefCount);
-
-            var region = new VkBufferCopy
-            {
-                srcOffset = sourceOffset,
-                dstOffset = destinationOffset,
-                size = sizeInBytes
-            };
-
-            vkCmdCopyBuffer(CommandBuffer, srcVkBuffer.DeviceBuffer, dstVkBuffer.DeviceBuffer, 1, ref region);
-
-            VkMemoryBarrier barrier;
-            barrier.sType = VkStructureType.MemoryBarrier;
-            barrier.srcAccessMask = VkAccessFlags.TransferWrite;
-            barrier.dstAccessMask = VkAccessFlags.VertexAttributeRead;
-            barrier.pNext = null;
-            vkCmdPipelineBarrier(
-                CommandBuffer,
-                VkPipelineStageFlags.Transfer, VkPipelineStageFlags.VertexInput,
-                VkDependencyFlags.None,
-                1, ref barrier,
-                0, null,
-                0, null);
-        }
-
-        protected override void CopyTextureCore(
-            Texture source,
-            uint srcX, uint srcY, uint srcZ,
-            uint srcMipLevel,
-            uint srcBaseArrayLayer,
-            Texture destination,
-            uint dstX, uint dstY, uint dstZ,
-            uint dstMipLevel,
-            uint dstBaseArrayLayer,
-            uint width, uint height, uint depth,
-            uint layerCount)
-        {
-            ensureNoRenderPass();
-            CopyTextureCore_VkCommandBuffer(
-                CommandBuffer,
-                source, srcX, srcY, srcZ, srcMipLevel, srcBaseArrayLayer,
-                destination, dstX, dstY, dstZ, dstMipLevel, dstBaseArrayLayer,
-                width, height, depth, layerCount);
-
-            var srcVkTexture = Util.AssertSubtype<Texture, VkTexture>(source);
-            currentStagingInfo.Resources.Add(srcVkTexture.RefCount);
-            var dstVkTexture = Util.AssertSubtype<Texture, VkTexture>(destination);
-            currentStagingInfo.Resources.Add(dstVkTexture.RefCount);
         }
 
         private VkCommandBuffer getNextCommandBuffer()
@@ -1188,13 +1201,6 @@ namespace Veldrid.Vk
             }
 
             currentStagingInfo.Resources.Add(vkPipeline.RefCount);
-        }
-
-        private protected override void UpdateBufferCore(DeviceBuffer buffer, uint bufferOffsetInBytes, IntPtr source, uint sizeInBytes)
-        {
-            var stagingBuffer = getStagingBuffer(sizeInBytes);
-            gd.UpdateBuffer(stagingBuffer, 0, source, sizeInBytes);
-            CopyBuffer(stagingBuffer, 0, buffer, bufferOffsetInBytes, sizeInBytes);
         }
 
         private protected override void GenerateMipmapsCore(Texture texture)

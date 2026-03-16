@@ -19,5 +19,6 @@
         public static FixedUtf8String Main { get; } = "main";
         public static FixedUtf8String VkKhrGetPhysicalDeviceProperties2 { get; } = "VK_KHR_get_physical_device_properties2";
         public static FixedUtf8String VkKhrPortabilitySubset { get; } = "VK_KHR_portability_subset";
+        public static FixedUtf8String VkKhrPortabilityEnumeration { get; } = "VK_KHR_portability_enumeration";
     }
 }

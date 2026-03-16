@@ -13,6 +13,8 @@ namespace Veldrid.Vk
 {
     internal unsafe class VkGraphicsDevice : GraphicsDevice
     {
+        private const uint vk_instance_create_enumerate_portability_bit_khr = 0x00000001;
+
         public override string DeviceName => deviceName;
 
         public override string VendorName => vendorName;
@@ -770,9 +772,17 @@ namespace Veldrid.Vk
             var instanceExtensions = new StackList<IntPtr, Size64Bytes>();
             var instanceLayers = new StackList<IntPtr, Size64Bytes>();
 
-            if (availableInstanceExtensions.Contains(CommonStrings.VkKhrPortabilitySubset)) surfaceExtensions.Add(CommonStrings.VkKhrPortabilitySubset);
+            if (availableInstanceExtensions.Contains(CommonStrings.VkKhrPortabilitySubset))
+                surfaceExtensions.Add(CommonStrings.VkKhrPortabilitySubset);
 
-            if (availableInstanceExtensions.Contains(CommonStrings.VkKhrSurfaceExtensionName)) surfaceExtensions.Add(CommonStrings.VkKhrSurfaceExtensionName);
+            if (availableInstanceExtensions.Contains(CommonStrings.VkKhrSurfaceExtensionName))
+                surfaceExtensions.Add(CommonStrings.VkKhrSurfaceExtensionName);
+
+            if (availableInstanceExtensions.Contains(CommonStrings.VkKhrPortabilityEnumeration))
+            {
+                instanceExtensions.Add(CommonStrings.VkKhrPortabilityEnumeration);
+                instanceCi.flags |= vk_instance_create_enumerate_portability_bit_khr;
+            }
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
