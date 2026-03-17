@@ -12,6 +12,7 @@ namespace Veldrid.OpenGL.EGL
         public const int EGL_BLUE_SIZE = 0x3022;
         public const int EGL_ALPHA_SIZE = 0x3021;
         public const int EGL_DEPTH_SIZE = 0x3025;
+        public const int EGL_STENCIL_SIZE = 0x3026;
         public const int EGL_SURFACE_TYPE = 0x3033;
         public const int EGL_WINDOW_BIT = 0x0004;
         public const int EGL_OPENGL_ES_BIT = 0x0001;
@@ -45,7 +46,7 @@ namespace Veldrid.OpenGL.EGL
         public static extern IntPtr eglGetCurrentDisplay();
 
         [DllImport(lib_name)]
-        public static extern IntPtr eglGetDisplay(int nativeDisplay);
+        public static extern IntPtr eglGetDisplay(IntPtr nativeDisplay);
 
         [DllImport(lib_name)]
         public static extern IntPtr eglGetCurrentSurface(int readdraw);

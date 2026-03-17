@@ -311,6 +311,29 @@ namespace Veldrid.OpenGL
                 case PixelFormat.R32Float:
                     return 32;
 
+                case PixelFormat.D24UNormS8UInt:
+                    return 24;
+
+                case PixelFormat.D32FloatS8UInt:
+                    return 32;
+
+                default:
+                    throw new VeldridException($"Unsupported depth format: {value}");
+            }
+        }
+
+        private static int getStencilBits(PixelFormat value)
+        {
+            switch (value)
+            {
+                case PixelFormat.D24UNormS8UInt:
+                case PixelFormat.D32FloatS8UInt:
+                    return 8;
+
+                case PixelFormat.R16UNorm:
+                case PixelFormat.R32Float:
+                    return 0;
+
                 default:
                     throw new VeldridException($"Unsupported depth format: {value}");
             }
@@ -750,7 +773,7 @@ namespace Veldrid.OpenGL
             IntPtr aNativeWindow,
             SwapchainDescription swapchainDescription)
         {
-            IntPtr display = eglGetDisplay(0);
+            IntPtr display = eglGetDisplay(IntPtr.Zero);
             if (display == IntPtr.Zero) throw new VeldridException($"Failed to get the default Android EGLDisplay: {eglGetError()}");
 
             int major, minor;
@@ -765,6 +788,10 @@ namespace Veldrid.OpenGL
                 EGL_DEPTH_SIZE,
                 swapchainDescription.DepthFormat != null
                     ? getDepthBits(swapchainDescription.DepthFormat.Value)
+                    : 0,
+                EGL_STENCIL_SIZE,
+                swapchainDescription.DepthFormat != null
+                    ? getStencilBits(swapchainDescription.DepthFormat.Value)
                     : 0,
                 EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
                 EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT,
