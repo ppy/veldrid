@@ -118,9 +118,9 @@ namespace Veldrid
         /// </summary>
         public static readonly SamplerDescription POINT = new SamplerDescription
         {
-            AddressModeU = SamplerAddressMode.Clamp,
-            AddressModeV = SamplerAddressMode.Clamp,
-            AddressModeW = SamplerAddressMode.Clamp,
+            AddressModeU = SamplerAddressMode.Wrap,
+            AddressModeV = SamplerAddressMode.Wrap,
+            AddressModeW = SamplerAddressMode.Wrap,
             Filter = SamplerFilter.MinPointMagPointMipPoint,
             LodBias = 0,
             MinimumLod = 0,
@@ -166,9 +166,9 @@ namespace Veldrid
         /// </summary>
         public static readonly SamplerDescription ANISO4_X = new SamplerDescription
         {
-            AddressModeU = SamplerAddressMode.Clamp,
-            AddressModeV = SamplerAddressMode.Clamp,
-            AddressModeW = SamplerAddressMode.Clamp,
+            AddressModeU = SamplerAddressMode.Wrap,
+            AddressModeV = SamplerAddressMode.Wrap,
+            AddressModeW = SamplerAddressMode.Wrap,
             Filter = SamplerFilter.Anisotropic,
             LodBias = 0,
             MinimumLod = 0,
