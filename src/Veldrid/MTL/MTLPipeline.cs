@@ -160,8 +160,13 @@ namespace Veldrid.MTL
             {
                 var depthDescriptor = MTLUtil.AllocInit<MTLDepthStencilDescriptor>(
                     nameof(MTLDepthStencilDescriptor));
+                // Metal has no explicit depth-test enable flag on the depth-stencil descriptor.
+                // When depth testing is disabled we must force "always" to avoid unintentionally
+                // rejecting all fragments if DepthComparison is left at its default (Never).
                 depthDescriptor.depthCompareFunction = MtlFormats.VdToMtlCompareFunction(
-                    description.DepthStencilState.DepthComparison);
+                    description.DepthStencilState.DepthTestEnabled
+                        ? description.DepthStencilState.DepthComparison
+                        : ComparisonKind.Always);
                 depthDescriptor.depthWriteEnabled = description.DepthStencilState.DepthWriteEnabled;
 
                 bool stencilEnabled = description.DepthStencilState.StencilTestEnabled;
