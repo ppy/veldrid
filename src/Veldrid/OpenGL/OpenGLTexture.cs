@@ -65,7 +65,15 @@ namespace Veldrid.OpenGL
             Width = description.Width;
             Height = description.Height;
             Depth = description.Depth;
-            Format = description.Format;
+
+            if (description.Format == PixelFormat.D24UNormS8UInt && !gd.Extensions.OesPackedDepthStencil) {
+                Console.WriteLine(
+                    "[Veldrid] GL_OES_packed_depth_stencil not available — downgrading D24_UNorm_S8_UInt to D32_Float_S8_UInt");
+                Format = PixelFormat.D32FloatS8UInt;
+            }
+            else {
+                Format = description.Format;
+            }
             MipLevels = description.MipLevels;
             ArrayLayers = description.ArrayLayers;
             Usage = description.Usage;
@@ -115,7 +123,15 @@ namespace Veldrid.OpenGL
             Width = description.Width;
             Height = description.Height;
             Depth = description.Depth;
-            Format = description.Format;
+
+            if (description.Format == PixelFormat.D24UNormS8UInt && !gd.Extensions.OesPackedDepthStencil) {
+                Console.WriteLine(
+                    "[Veldrid] GL_OES_packed_depth_stencil not available — downgrading D24_UNorm_S8_UInt to D32_Float_S8_UInt");
+                Format = PixelFormat.D32FloatS8UInt;
+            }
+            else {
+                Format = description.Format;
+            }
             MipLevels = description.MipLevels;
             ArrayLayers = description.ArrayLayers;
             Usage = description.Usage;

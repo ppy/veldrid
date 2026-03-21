@@ -17,7 +17,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NativeLibraryLoader" Version="$(NativeLibraryLoaderVersion)"/>
     <PackageReference Include="ppy.Vk" Version="1.0.26" Condition="'$(ExcludeVulkan)' != 'true'"/>
     <PackageReference Include="Vortice.D3DCompiler" Version="$(VorticeWindowsVersion)"/>
     <PackageReference Include="Vortice.Direct3D11" Version="$(VorticeWindowsVersion)"/>

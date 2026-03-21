@@ -7,7 +7,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Veldrid.MetalBindings;
-using NativeLibrary = NativeLibraryLoader.NativeLibrary;
 
 namespace Veldrid.MTL
 {
@@ -57,7 +56,7 @@ namespace Veldrid.MTL
         private const string unaligned_buffer_copy_pipeline_mac_os_name = "MTL_UnalignedBufferCopy_macOS";
         private const string unaligned_buffer_copy_pipelinei_os_name = "MTL_UnalignedBufferCopy_iOS";
         private readonly object unalignedBufferCopyPipelineLock = new object();
-        private readonly NativeLibrary libSystem;
+        private readonly IntPtr libSystem;
 
         // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
         private readonly IntPtr concreteGlobalBlock;
@@ -122,8 +121,8 @@ namespace Veldrid.MTL
 
             if (MetalFeatures.IsMacOS)
             {
-                libSystem = new NativeLibrary("libSystem.dylib");
-                concreteGlobalBlock = libSystem.LoadFunction("_NSConcreteGlobalBlock");
+                libSystem = NativeLibrary.Load("libSystem.dylib");
+                concreteGlobalBlock = NativeLibrary.GetExport(libSystem, "_NSConcreteGlobalBlock");
                 completionHandler = OnCommandBufferCompleted;
                 displayLink = new MtlcvDisplayLink();
             }
@@ -325,7 +324,8 @@ namespace Veldrid.MTL
 
             lock (s_aot_registered_blocks) s_aot_registered_blocks.Remove(completionBlockLiteral);
 
-            libSystem?.Dispose();
+            NativeLibrary.Free(libSystem);
+
             Marshal.FreeHGlobal(completionBlockDescriptor);
             Marshal.FreeHGlobal(completionBlockLiteral);
 
