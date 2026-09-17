@@ -118,8 +118,6 @@ namespace Veldrid.Vk
         private bool debugMarkerEnabled;
         private VkDebugMarkerSetObjectNameExtT setObjectNameDelegate;
         private readonly Stack<SharedCommandPool> sharedGraphicsCommandPools = new Stack<SharedCommandPool>();
-        private bool standardValidationSupported;
-        private bool khronosValidationSupported;
         private bool standardClipYDirection;
         private VkGetPhysicalDeviceProperties2T getPhysicalDeviceProperties2;
 
@@ -840,16 +838,10 @@ namespace Veldrid.Vk
                 }
 
                 if (availableInstanceLayers.Contains(CommonStrings.StandardValidationLayerName))
-                {
-                    standardValidationSupported = true;
                     instanceLayers.Add(CommonStrings.StandardValidationLayerName);
-                }
 
                 if (availableInstanceLayers.Contains(CommonStrings.KhronosValidationLayerName))
-                {
-                    khronosValidationSupported = true;
                     instanceLayers.Add(CommonStrings.KhronosValidationLayerName);
-                }
             }
 
             instanceCi.enabledExtensionCount = instanceExtensions.Count;
@@ -1017,13 +1009,6 @@ namespace Veldrid.Vk
             deviceCreateInfo.pQueueCreateInfos = queueCreateInfos;
 
             deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
-
-            var layerNames = new StackList<IntPtr>();
-            if (standardValidationSupported) layerNames.Add(CommonStrings.StandardValidationLayerName);
-
-            if (khronosValidationSupported) layerNames.Add(CommonStrings.KhronosValidationLayerName);
-            deviceCreateInfo.enabledLayerCount = layerNames.Count;
-            deviceCreateInfo.ppEnabledLayerNames = (byte**)layerNames.Data;
 
             fixed (IntPtr* activeExtensionsPtr = activeExtensions)
             {
