@@ -35,6 +35,20 @@ namespace Veldrid.Vk
             set => mainSwapchain.AllowTearing = value;
         }
 
+        public override bool LowLatencySupported => mainSwapchain.LowLatencySupported;
+
+        public override LowLatencyMode LowLatencyMode
+        {
+            get => mainSwapchain.LowLatencyMode;
+            set => mainSwapchain.LowLatencyMode = value;
+        }
+
+        public override uint LowLatencyMinimumIntervalUs
+        {
+            get => mainSwapchain.LowLatencyMinimumIntervalUs;
+            set => mainSwapchain.LowLatencyMinimumIntervalUs = value;
+        }
+
         public override Swapchain MainSwapchain => mainSwapchain;
 
         public override GraphicsDeviceFeatures Features { get; }
@@ -68,6 +82,13 @@ namespace Veldrid.Vk
         public VkGetImageMemoryRequirements2T GetImageMemoryRequirements2 { get; private set; }
 
         public VkCreateMetalSurfaceExtT CreateMetalSurfaceExt { get; private set; }
+
+        public VkNvLowLatency2 LowLatency { get; private set; }
+
+        public void SetLatencyMarker(VkLatencyMarkerNV marker) => mainSwapchain?.SetLatencyMarker(marker);
+
+        public VkLatencyTimingsFrameReportNV[] GetLatencyTimings()
+            => mainSwapchain?.GetLatencyTimings() ?? Array.Empty<VkLatencyTimingsFrameReportNV>();
 
         public override ResourceFactory ResourceFactory { get; }
         private static readonly FixedUtf8String s_name = "Veldrid-VkGraphicsDevice";
@@ -120,6 +141,7 @@ namespace Veldrid.Vk
         private readonly Stack<SharedCommandPool> sharedGraphicsCommandPools = new Stack<SharedCommandPool>();
         private bool standardClipYDirection;
         private VkGetPhysicalDeviceProperties2T getPhysicalDeviceProperties2;
+        private VkGetPhysicalDeviceFeatures2T getPhysicalDeviceFeatures2;
 
         public VkGraphicsDevice(GraphicsDeviceOptions options, SwapchainDescription? scDesc)
             : this(options, scDesc, new VulkanDeviceOptions())
@@ -619,12 +641,22 @@ namespace Veldrid.Vk
         {
             checkSubmittedFences();
 
+            mainSwapchain?.NotifyCommandBufferSubmitting();
+
             bool useExtraFence = fence != null;
             var si = VkSubmitInfo.New();
             si.commandBufferCount = 1;
             si.pCommandBuffers = &vkCb;
             var waitDstStageMask = VkPipelineStageFlags.ColorAttachmentOutput;
             si.pWaitDstStageMask = &waitDstStageMask;
+
+            var latencyPresentId = VkLatencySubmissionPresentIdNV.New();
+
+            if (LowLatency != null && mainSwapchain?.CurrentPresentId > 0)
+            {
+                latencyPresentId.PresentID = mainSwapchain.CurrentPresentId;
+                si.pNext = &latencyPresentId;
+            }
 
             si.pWaitSemaphores = waitSemaphoresPtr;
             si.waitSemaphoreCount = waitSemaphoreCount;
@@ -861,6 +893,9 @@ namespace Veldrid.Vk
             {
                 getPhysicalDeviceProperties2 = getInstanceProcAddr<VkGetPhysicalDeviceProperties2T>("vkGetPhysicalDeviceProperties2")
                                                ?? getInstanceProcAddr<VkGetPhysicalDeviceProperties2T>("vkGetPhysicalDeviceProperties2KHR");
+
+                getPhysicalDeviceFeatures2 = getInstanceProcAddr<VkGetPhysicalDeviceFeatures2T>("vkGetPhysicalDeviceFeatures2")
+                                             ?? getInstanceProcAddr<VkGetPhysicalDeviceFeatures2T>("vkGetPhysicalDeviceFeatures2KHR");
             }
 
             foreach (var tempStr in tempStrings) tempStr.Dispose();
@@ -947,6 +982,13 @@ namespace Veldrid.Vk
             IntPtr[] activeExtensions = new IntPtr[props.Length];
             uint activeExtensionCount = 0;
 
+            bool enableLowLatency2 = false;
+            var timelineFeatures = VkPhysicalDeviceTimelineSemaphoreFeaturesKHR.New();
+            var presentIdFeatures = VkPhysicalDevicePresentIdFeaturesKHR.New();
+
+            IntPtr lowLatency2Ext = IntPtr.Zero, timelineSemaphoreExt = IntPtr.Zero, presentIdExt = IntPtr.Zero;
+            bool lowLatency2Required = false, timelineSemaphoreRequired = false, presentIdRequired = false;
+
             fixed (VkExtensionProperties* properties = props)
             {
                 for (int property = 0; property < props.Length; property++)
@@ -988,12 +1030,57 @@ namespace Veldrid.Vk
                         requiredInstanceExtensions.Remove(extensionName);
                         hasDriverProperties = true;
                     }
+                    else if (extensionName == "VK_NV_low_latency2")
+                    {
+                        lowLatency2Ext = (IntPtr)properties[property].extensionName;
+                        lowLatency2Required = requiredInstanceExtensions.Remove(extensionName);
+                    }
+                    else if (extensionName == "VK_KHR_timeline_semaphore")
+                    {
+                        timelineSemaphoreExt = (IntPtr)properties[property].extensionName;
+                        timelineSemaphoreRequired = requiredInstanceExtensions.Remove(extensionName);
+                    }
+                    else if (extensionName == "VK_KHR_present_id")
+                    {
+                        presentIdExt = (IntPtr)properties[property].extensionName;
+                        presentIdRequired = requiredInstanceExtensions.Remove(extensionName);
+                    }
                     else if (extensionName == CommonStrings.VkKhrPortabilitySubset)
                     {
                         activeExtensions[activeExtensionCount++] = (IntPtr)properties[property].extensionName;
                         requiredInstanceExtensions.Remove(extensionName);
                     }
                     else if (requiredInstanceExtensions.Remove(extensionName)) activeExtensions[activeExtensionCount++] = (IntPtr)properties[property].extensionName;
+                }
+
+                enableLowLatency2 = lowLatency2Ext != IntPtr.Zero
+                    && timelineSemaphoreExt != IntPtr.Zero
+                    && presentIdExt != IntPtr.Zero
+                    && getPhysicalDeviceFeatures2 != null;
+
+                if (enableLowLatency2)
+                {
+                    // verify the features are actually supported before requesting them.
+                    var features2 = VkPhysicalDeviceFeatures2Khr.New();
+                    timelineFeatures.PNext = &presentIdFeatures;
+                    features2.PNext = &timelineFeatures;
+                    getPhysicalDeviceFeatures2(PhysicalDevice, &features2);
+
+                    enableLowLatency2 = timelineFeatures.TimelineSemaphore != 0 && presentIdFeatures.PresentId != 0;
+                }
+
+                if (enableLowLatency2)
+                {
+                    activeExtensions[activeExtensionCount++] = lowLatency2Ext;
+                    activeExtensions[activeExtensionCount++] = timelineSemaphoreExt;
+                    activeExtensions[activeExtensionCount++] = presentIdExt;
+                }
+                else
+                {
+                    // honour explicit user requests even when Reflex can't be enabled.
+                    if (lowLatency2Required) activeExtensions[activeExtensionCount++] = lowLatency2Ext;
+                    if (timelineSemaphoreRequired) activeExtensions[activeExtensionCount++] = timelineSemaphoreExt;
+                    if (presentIdRequired) activeExtensions[activeExtensionCount++] = presentIdExt;
                 }
             }
 
@@ -1007,8 +1094,16 @@ namespace Veldrid.Vk
             var deviceCreateInfo = VkDeviceCreateInfo.New();
             deviceCreateInfo.queueCreateInfoCount = queueCreateInfosCount;
             deviceCreateInfo.pQueueCreateInfos = queueCreateInfos;
-
             deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
+
+            if (enableLowLatency2)
+            {
+                timelineFeatures.TimelineSemaphore = 1;
+                timelineFeatures.PNext = &presentIdFeatures;
+                presentIdFeatures.PresentId = 1;
+                presentIdFeatures.PNext = null;
+                deviceCreateInfo.pNext = &timelineFeatures;
+            }
 
             fixed (IntPtr* activeExtensionsPtr = activeExtensions)
             {
@@ -1020,6 +1115,22 @@ namespace Veldrid.Vk
             }
 
             vkGetDeviceQueue(device, GraphicsQueueIndex, 0, out graphicsQueue);
+
+            if (enableLowLatency2)
+            {
+                var lowLatency = new VkNvLowLatency2
+                {
+                    SetLatencySleepMode = getDeviceProcAddr<VkSetLatencySleepModeNvT>("vkSetLatencySleepModeNV"),
+                    LatencySleep = getDeviceProcAddr<VkLatencySleepNvT>("vkLatencySleepNV"),
+                    SetLatencyMarker = getDeviceProcAddr<VkSetLatencyMarkerNvT>("vkSetLatencyMarkerNV"),
+                    GetLatencyTimings = getDeviceProcAddr<VkGetLatencyTimingsNvT>("vkGetLatencyTimingsNV"),
+                    QueueNotifyOutOfBand = getDeviceProcAddr<VkQueueNotifyOutOfBandNvT>("vkQueueNotifyOutOfBandNV"),
+                    WaitSemaphores = getDeviceProcAddr<VkWaitSemaphoresKhrT>("vkWaitSemaphoresKHR")
+                                     ?? getDeviceProcAddr<VkWaitSemaphoresKhrT>("vkWaitSemaphores")
+                };
+
+                LowLatency = lowLatency.IsComplete ? lowLatency : null;
+            }
 
             if (debugMarkerEnabled)
             {
@@ -1241,17 +1352,43 @@ namespace Veldrid.Vk
             uint imageIndex = vkSc.ImageIndex;
             presentInfo.pImageIndices = &imageIndex;
 
+            ulong presentId = vkSc.CurrentPresentId;
+            var presentIdInfo = VkPresentIdKHR.New();
+
+            if (LowLatency != null && presentId > 0)
+            {
+                presentIdInfo.SwapchainCount = 1;
+                presentIdInfo.PPresentIds = &presentId;
+                presentInfo.pNext = &presentIdInfo;
+            }
+
+            vkSc.NotifyRenderSubmitEnd();
+
             object presentLock = vkSc.PresentQueueIndex == GraphicsQueueIndex ? graphicsQueueLock : vkSc;
 
             lock (presentLock)
             {
+                vkSc.SetLatencyMarker(VkLatencyMarkerNV.PresentStart);
                 vkQueuePresentKHR(vkSc.PresentQueue, ref presentInfo);
+                vkSc.SetLatencyMarker(VkLatencyMarkerNV.PresentEnd);
+
+                if (mainSwapchain?.LowLatencySupported == true)
+                    // Blocks until the driver decides CPU work should begin, then opens the frame.
+                    mainSwapchain.LatencySleep();
 
                 if (vkSc.AcquireNextImage(device, VkSemaphore.Null, vkSc.ImageAvailableFence))
                 {
                     var fence = vkSc.ImageAvailableFence;
                     vkWaitForFences(device, 1, ref fence, true, ulong.MaxValue);
                     vkResetFences(device, 1, ref fence);
+                }
+
+                if (mainSwapchain?.LowLatencySupported == true)
+                {
+                    // NOTE: these markers would be more faithfully placed in o!f's input and update threads, but the NV_low_latency2 spec requires one marker
+                    //       to be set for each frame, coupled to present ID. So... assume o!f's threads are practically instant and put markers here.
+                    mainSwapchain.SetLatencyMarker(VkLatencyMarkerNV.InputSample);
+                    mainSwapchain.SetLatencyMarker(VkLatencyMarkerNV.SimulationStart);
                 }
             }
         }

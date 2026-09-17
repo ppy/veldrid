@@ -136,6 +136,25 @@ namespace Veldrid
         public virtual bool AllowTearing { get; set; }
 
         /// <summary>
+        ///     Whether low latency mode is supported on this device. Currently, only NVIDIA Reflex is supported, but support for AMD anti-lag and
+        ///     intel XeLL is planned.
+        /// </summary>
+        public virtual bool LowLatencySupported => false;
+
+        /// <summary>
+        ///     Gets or sets whether the graphics device should attempt to reduce latency by delaying frames until the GPU is ready to present them.
+        ///     <see cref="LowLatencyMode.OnWithBoost" /> further hints to the GPU that it should boost its frequency to reduce latency further on
+        ///     certain platforms (e.g. NVIDIA Reflex).
+        /// </summary>
+        public virtual LowLatencyMode LowLatencyMode { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the minimum interval between frames in microseconds while low latency mode is active.
+        ///     This option has no effect when <see cref="LowLatencyMode" /> is <see cref="LowLatencyMode.Off" />.
+        /// </summary>
+        public virtual uint LowLatencyMinimumIntervalUs { get; set; }
+
+        /// <summary>
         ///     Gets a simple point-filtered <see cref="Sampler" /> object owned by this instance.
         ///     This object is created with <see cref="SamplerDescription.POINT" />.
         /// </summary>

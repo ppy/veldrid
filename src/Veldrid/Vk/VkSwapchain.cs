@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Linq;
+using System.Threading;
 using Vulkan;
-using static Vulkan.VulkanNative;
 using static Veldrid.Vk.VulkanUtil;
+using static Vulkan.VulkanNative;
 
 namespace Veldrid.Vk
 {
@@ -69,6 +70,178 @@ namespace Veldrid.Vk
         private string name;
         private bool disposed;
 
+        // Low latency mode variables. For now only lowlatency2 (NVIDIA Reflex), but will be extended to AMD anti lag in the future
+        private VkSemaphore latencySemaphore;
+        private ulong latencySemaphoreValue;
+        private LowLatencyMode lowLatencyMode;
+        private uint lowLatencyMinimumIntervalUs;
+        private bool renderSubmitStarted;
+
+        /// <summary>
+        /// Whether VK_NV_low_latency2 is usable with this swapchain.
+        /// </summary>
+        public bool LowLatencySupported => gd.LowLatency != null && latencySemaphore != VkSemaphore.Null;
+
+        // This ID is only incremented in this class, but potentially read from other threads via <see cref="VkGraphicsDevice.SetLatencyMarker"/>.
+        // Hence interlocked increment + volatile read to prevent data races that would correlate timings of past with present frames.
+        private ulong currentPresentId;
+
+        /// <summary>
+        /// The present ID of the frame currently being built, or 0 if no frame has begun.
+        /// </summary>
+        public ulong CurrentPresentId => Volatile.Read(ref currentPresentId);
+
+        /// <summary>
+        /// Low latency mode (CPU work paced against GPU completion).
+        /// </summary>
+        public LowLatencyMode LowLatencyMode
+        {
+            get => lowLatencyMode;
+            set
+            {
+                if (lowLatencyMode == value) return;
+
+                lowLatencyMode = value;
+                applyLatencySleepMode();
+                recreateAndReacquire(framebuffer.Width, framebuffer.Height);
+            }
+        }
+
+        /// <summary>
+        /// Minimum interval between presents, in microseconds. Zero disables the frame cap. Only has an effect
+        /// when <see cref="LowLatencyMode"/> is not <see cref="LowLatencyMode.Off"/>.
+        /// </summary>
+        public uint LowLatencyMinimumIntervalUs
+        {
+            get => lowLatencyMinimumIntervalUs;
+            set
+            {
+                if (lowLatencyMinimumIntervalUs == value) return;
+
+                lowLatencyMinimumIntervalUs = value;
+                applyLatencySleepMode();
+            }
+        }
+
+        /// <summary>
+        /// Begins a new latency frame and blocks until the driver says CPU work should start.
+        /// Must be called exactly once between presents, before input sampling.
+        /// </summary>
+        public void LatencySleep()
+        {
+            if (!LowLatencySupported) return;
+
+            Interlocked.Increment(ref currentPresentId);
+            renderSubmitStarted = false;
+
+            if (lowLatencyMode == LowLatencyMode.Off) return;
+
+            ulong waitValue = ++latencySemaphoreValue;
+
+            var sleepInfo = VkLatencySleepInfoNV.New();
+            sleepInfo.SignalSemaphore = latencySemaphore;
+            sleepInfo.Value = waitValue;
+
+            var result = gd.LowLatency.LatencySleep(gd.Device, deviceSwapchain, &sleepInfo);
+            if (result != VkResult.Success) return;
+
+            var semaphore = latencySemaphore;
+
+            var waitInfo = VkSemaphoreWaitInfoKHR.New();
+            waitInfo.SemaphoreCount = 1;
+            waitInfo.PSemaphores = &semaphore;
+            waitInfo.PValues = &waitValue;
+
+            gd.LowLatency.WaitSemaphores(gd.Device, &waitInfo, ulong.MaxValue);
+        }
+
+        public void SetLatencyMarker(VkLatencyMarkerNV marker)
+        {
+            if (!LowLatencySupported || CurrentPresentId == 0) return;
+
+            var info = VkSetLatencyMarkerInfoNV.New();
+            info.PresentID = CurrentPresentId;
+            info.Marker = marker;
+
+            gd.LowLatency.SetLatencyMarker(gd.Device, deviceSwapchain, &info);
+        }
+
+        /// <summary>
+        /// Emits the simulation-end / render-submit-start pair on the first submission of a frame.
+        /// </summary>
+        public void NotifyCommandBufferSubmitting()
+        {
+            if (!LowLatencySupported || CurrentPresentId == 0 || renderSubmitStarted) return;
+
+            renderSubmitStarted = true;
+            SetLatencyMarker(VkLatencyMarkerNV.SimulationEnd);
+            SetLatencyMarker(VkLatencyMarkerNV.RenderSubmitStart);
+        }
+
+        public void NotifyRenderSubmitEnd()
+        {
+            if (!renderSubmitStarted) return;
+
+            renderSubmitStarted = false;
+            SetLatencyMarker(VkLatencyMarkerNV.RenderSubmitEnd);
+        }
+
+        /// <summary>
+        /// Retrieves the most recent frame reports collected by the driver.
+        /// </summary>
+        public VkLatencyTimingsFrameReportNV[] GetLatencyTimings()
+        {
+            if (!LowLatencySupported) return [];
+
+            var info = VkGetLatencyMarkerInfoNV.New();
+            gd.LowLatency.GetLatencyTimings(gd.Device, deviceSwapchain, &info);
+
+            uint count = info.TimingCount;
+            if (count == 0) return [];
+
+            var timings = new VkLatencyTimingsFrameReportNV[count];
+            for (int i = 0; i < timings.Length; i++) timings[i] = VkLatencyTimingsFrameReportNV.New();
+
+            fixed (VkLatencyTimingsFrameReportNV* ptr = timings)
+            {
+                info.PTimings = ptr;
+                gd.LowLatency.GetLatencyTimings(gd.Device, deviceSwapchain, &info);
+            }
+
+            if (info.TimingCount == count) return timings;
+
+            var trimmed = new VkLatencyTimingsFrameReportNV[info.TimingCount];
+            Array.Copy(timings, trimmed, trimmed.Length);
+            return trimmed;
+        }
+
+        private void applyLatencySleepMode()
+        {
+            if (!LowLatencySupported) return;
+
+            var modeInfo = VkLatencySleepModeInfoNV.New();
+            modeInfo.LowLatencyMode = lowLatencyMode != LowLatencyMode.Off ? 1u : 0u;
+            modeInfo.LowLatencyBoost = lowLatencyMode == LowLatencyMode.OnWithBoost ? 1u : 0u;
+            modeInfo.MinimumIntervalUs = lowLatencyMinimumIntervalUs;
+
+            gd.LowLatency.SetLatencySleepMode(gd.Device, deviceSwapchain, &modeInfo);
+        }
+
+        private void createLatencySemaphore()
+        {
+            if (gd.LowLatency == null) return;
+
+            var typeCi = VkSemaphoreTypeCreateInfoKHR.New();
+            typeCi.SemaphoreType = VkSemaphoreTypeKHR.Timeline;
+            typeCi.InitialValue = 0;
+
+            var semaphoreCi = VkSemaphoreCreateInfo.New();
+            semaphoreCi.pNext = &typeCi;
+
+            var result = vkCreateSemaphore(gd.Device, ref semaphoreCi, null, out latencySemaphore);
+            if (result != VkResult.Success) latencySemaphore = VkSemaphore.Null;
+        }
+
         public VkSwapchain(VkGraphicsDevice gd, ref SwapchainDescription description)
             : this(gd, ref description, VkSurfaceKHR.Null)
         {
@@ -89,6 +262,8 @@ namespace Veldrid.Vk
             if (!getPresentQueueIndex(out presentQueueIndex)) throw new VeldridException("The system does not support presenting the given Vulkan surface.");
 
             vkGetDeviceQueue(this.gd.Device, presentQueueIndex, 0, out presentQueue);
+
+            createLatencySemaphore();
 
             framebuffer = new VkSwapchainFramebuffer(gd, this, Surface, description.Width, description.Height, description.DepthFormat);
 
@@ -219,8 +394,12 @@ namespace Veldrid.Vk
 
             if (syncToVBlank)
             {
-                if (presentModes.Contains(VkPresentModeKHR.FifoRelaxedKHR))
+                if (allowTearing && presentModes.Contains(VkPresentModeKHR.FifoRelaxedKHR))
                     presentMode = VkPresentModeKHR.FifoRelaxedKHR;
+
+                // FifoRelaxed's tearing undermines undershooting vrr frame rate caps; FIFO actually yields better latency in that case
+                if (lowLatencyMode != LowLatencyMode.Off)
+                    presentMode = VkPresentModeKHR.FifoKHR;
             }
             else if (allowTearing && presentModes.Contains(VkPresentModeKHR.ImmediateKHR))
                 presentMode = VkPresentModeKHR.ImmediateKHR;
@@ -265,9 +444,19 @@ namespace Veldrid.Vk
             var oldSwapchain = deviceSwapchain;
             swapchainCi.oldSwapchain = oldSwapchain;
 
+            var latencyCi = VkSwapchainLatencyCreateInfoNV.New();
+
+            if (gd.LowLatency != null)
+            {
+                latencyCi.LatencyModeEnable = 1;
+                swapchainCi.pNext = &latencyCi;
+            }
+
             result = vkCreateSwapchainKHR(gd.Device, ref swapchainCi, null, out deviceSwapchain);
             CheckResult(result);
             if (oldSwapchain != VkSwapchainKHR.Null) vkDestroySwapchainKHR(gd.Device, oldSwapchain, null);
+
+            applyLatencySleepMode();
 
             framebuffer.SetNewSwapchain(deviceSwapchain, width, height, surfaceFormat, swapchainCi.imageExtent);
             return true;
@@ -307,6 +496,8 @@ namespace Veldrid.Vk
 
         private void disposeCore()
         {
+            if (latencySemaphore != VkSemaphore.Null) vkDestroySemaphore(gd.Device, latencySemaphore, null);
+
             vkDestroyFence(gd.Device, imageAvailableFence, null);
             framebuffer.Dispose();
             vkDestroySwapchainKHR(gd.Device, deviceSwapchain, null);
