@@ -1391,6 +1391,58 @@ namespace Veldrid.Vk
                     mainSwapchain.SetLatencyMarker(VkLatencyMarkerNV.SimulationStart);
                 }
             }
+
+#if false // Change to true to debug NVIDIA reflex timings
+            if (vkSc.CurrentPresentId % 360 == 0)
+            {
+                double avgElapsedInputTime = 0;
+                double avgElapsedSimTime = 0;
+                double avgElapsedRenderTime = 0;
+                double avgElapsedPresentTime = 0;
+                double avgElapsedDriverTime = 0;
+                double avgElapsedOsRenderQueueTime = 0;
+                double avgElapsedGpuRenderTime = 0;
+                double avgElapsedTotalTime = 0;
+
+                var timings = vkSc.GetLatencyTimings();
+                for (int i = 0; i < timings.Length; i++)
+                {
+                    var t = timings[i];
+
+                    ulong elapsedInputTime = t.SimStartTimeUs - t.InputSampleTimeUs;
+                    ulong elapsedSimTime = t.SimEndTimeUs - t.SimStartTimeUs;
+                    ulong elapsedRenderTime = t.GpuRenderEndTimeUs - t.GpuRenderStartTimeUs;
+                    ulong elapsedPresentTime = t.PresentEndTimeUs - t.PresentStartTimeUs;
+                    ulong elapsedDriverTime = t.DriverEndTimeUs - t.DriverStartTimeUs;
+                    ulong elapsedOsRenderQueueTime = t.OsRenderQueueEndTimeUs - t.OsRenderQueueStartTimeUs;
+                    ulong elapsedGpuRenderTime = t.GpuRenderEndTimeUs - t.GpuRenderStartTimeUs;
+                    ulong elapsedTotalTime = t.GpuRenderEndTimeUs - t.InputSampleTimeUs;
+
+                    avgElapsedInputTime += elapsedInputTime / 1000.0;
+                    avgElapsedSimTime += elapsedSimTime / 1000.0;
+                    avgElapsedRenderTime += elapsedRenderTime / 1000.0;
+                    avgElapsedPresentTime += elapsedPresentTime / 1000.0;
+                    avgElapsedDriverTime += elapsedDriverTime / 1000.0;
+                    avgElapsedOsRenderQueueTime += elapsedOsRenderQueueTime / 1000.0;
+                    avgElapsedGpuRenderTime += elapsedGpuRenderTime / 1000.0;
+                    avgElapsedTotalTime += elapsedTotalTime / 1000.0;
+                }
+
+                if (timings.Length > 0)
+                {
+                    avgElapsedInputTime /= timings.Length;
+                    avgElapsedSimTime /= timings.Length;
+                    avgElapsedRenderTime /= timings.Length;
+                    avgElapsedPresentTime /= timings.Length;
+                    avgElapsedDriverTime /= timings.Length;
+                    avgElapsedOsRenderQueueTime /= timings.Length;
+                    avgElapsedGpuRenderTime /= timings.Length;
+                    avgElapsedTotalTime /= timings.Length;
+                }
+
+                Console.WriteLine($"[Vulkan] Average Latency Timings (ms) - Sim: {avgElapsedSimTime:F3}, Render: {avgElapsedRenderTime:F3}, Present: {avgElapsedPresentTime:F3}, Driver: {avgElapsedDriverTime:F3}, OS Render Queue: {avgElapsedOsRenderQueueTime:F3}, GPU Render: {avgElapsedGpuRenderTime:F3}, Total: {avgElapsedTotalTime:F3} (over {timings.Length} frames)");
+            }
+#endif
         }
 
         private protected override void WaitForIdleCore()
