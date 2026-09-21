@@ -219,7 +219,7 @@ namespace Veldrid.Vk
 
             if (syncToVBlank)
             {
-                if (presentModes.Contains(VkPresentModeKHR.FifoRelaxedKHR))
+                if (allowTearing && presentModes.Contains(VkPresentModeKHR.FifoRelaxedKHR))
                     presentMode = VkPresentModeKHR.FifoRelaxedKHR;
             }
             else if (allowTearing && presentModes.Contains(VkPresentModeKHR.ImmediateKHR))
