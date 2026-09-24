@@ -67,9 +67,6 @@ namespace Veldrid.MTL
         private readonly IntPtr completionBlockDescriptor;
         private readonly IntPtr completionBlockLiteral;
 
-        private readonly IMtlDisplayLink displayLink;
-        private readonly AutoResetEvent nextFrameReadyEvent;
-        private readonly EventWaitHandle frameEndedEvent = new EventWaitHandle(true, EventResetMode.ManualReset);
         private readonly BackendInfoMetal metalInfo;
         private MTLCommandBuffer latestSubmittedCb;
         private MtlShader unalignedBufferCopyShader;
@@ -124,18 +121,11 @@ namespace Veldrid.MTL
                 libSystem = NativeLibrary.Load("libSystem.dylib");
                 concreteGlobalBlock = NativeLibrary.GetExport(libSystem, "_NSConcreteGlobalBlock");
                 completionHandler = OnCommandBufferCompleted;
-                displayLink = new MtlcvDisplayLink();
             }
             else
             {
                 concreteGlobalBlock = IntPtr.Zero;
                 completionHandler = OnCommandBufferCompleted_Static;
-            }
-
-            if (displayLink != null)
-            {
-                nextFrameReadyEvent = new AutoResetEvent(true);
-                displayLink.Callback += OnDisplayLinkCallback;
             }
 
             completionHandlerFuncPtr = Marshal.GetFunctionPointerForDelegate(completionHandler);
@@ -183,13 +173,10 @@ namespace Veldrid.MTL
 
         public override void UpdateActiveDisplay(int x, int y, int w, int h)
         {
-            displayLink?.UpdateActiveDisplay(x, y, w, h);
         }
 
         public override double GetActualRefreshPeriod()
         {
-            if (displayLink != null) return displayLink.GetActualOutputVideoRefreshPeriod();
-
             return -1.0f;
         }
 
@@ -328,8 +315,6 @@ namespace Veldrid.MTL
 
             Marshal.FreeHGlobal(completionBlockDescriptor);
             Marshal.FreeHGlobal(completionBlockLiteral);
-
-            displayLink?.Dispose();
         }
 
         protected override void UnmapCore(IMappableResource resource, uint subresource)
@@ -393,12 +378,6 @@ namespace Veldrid.MTL
             }
 
             ObjectiveCRuntime.release(cb.NativePtr);
-        }
-
-        private void OnDisplayLinkCallback()
-        {
-            nextFrameReadyEvent.Set();
-            frameEndedEvent.WaitOne();
         }
 
         private MappedResource mapBuffer(MtlBuffer buffer, MapMode mode)
@@ -469,16 +448,7 @@ namespace Veldrid.MTL
 
         private protected override void WaitForNextFrameReadyCore()
         {
-            frameEndedEvent.Reset();
-            nextFrameReadyEvent?.WaitOne(TimeSpan.FromSeconds(1)); // Should never time out.
-
-            // in iOS, if one frame takes longer than the next V-Sync request, the next frame will be processed immediately rather than being delayed to a subsequent V-Sync request,
-            // therefore we will request the next drawable here as a method of waiting until we're ready to draw the next frame.
-            if (!MetalFeatures.IsMacOS)
-            {
-                var mtlSwapchainFramebuffer = Util.AssertSubtype<Framebuffer, MtlSwapchainFramebuffer>(mainSwapchain.Framebuffer);
-                mtlSwapchainFramebuffer.EnsureDrawableAvailable();
-            }
+            mainSwapchain.EnsureDrawableAvailable();
         }
 
         private protected override bool GetPixelFormatSupportCore(
@@ -559,8 +529,6 @@ namespace Veldrid.MTL
 
                 mtlSc.InvalidateDrawable();
             }
-
-            frameEndedEvent.Set();
         }
 
         private protected override void UpdateBufferCore(DeviceBuffer buffer, uint bufferOffsetInBytes, IntPtr source, uint sizeInBytes)
