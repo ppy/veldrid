@@ -13,8 +13,8 @@ namespace Veldrid.MetalBindings
 
         public MTLPixelFormat pixelFormat
         {
-            get => (MTLPixelFormat)uint_objc_msgSend(NativePtr, Selectors.pixelFormat);
-            set => objc_msgSend(NativePtr, Selectors.setPixelFormat, (uint)value);
+            get => (MTLPixelFormat)nuint_objc_msgSend(NativePtr, Selectors.pixelFormat);
+            set => objc_msgSend(NativePtr, Selectors.setPixelFormat, (nuint)value);
         }
 
         public MTLColorWriteMask writeMask

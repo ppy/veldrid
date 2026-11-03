@@ -274,8 +274,7 @@ namespace Veldrid.MTL
                         dstTexture,
                         dstBaseArrayLayer + layer,
                         dstMipLevel,
-                        new MTLOrigin(dstX, dstY, dstZ),
-                        gd.MetalFeatures.IsMacOS);
+                        new MTLOrigin(dstX, dstY, dstZ));
                 }
             }
             else if (srcIsStaging)
@@ -424,8 +423,7 @@ namespace Veldrid.MTL
                         dstMtlTexture.DeviceTexture,
                         dstBaseArrayLayer + layer,
                         dstMipLevel,
-                        new MTLOrigin(dstX, dstY, dstZ),
-                        gd.MetalFeatures.IsMacOS);
+                        new MTLOrigin(dstX, dstY, dstZ));
                 }
             }
         }

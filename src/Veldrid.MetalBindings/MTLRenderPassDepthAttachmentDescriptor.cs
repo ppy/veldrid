@@ -17,14 +17,14 @@ namespace Veldrid.MetalBindings
 
         public MTLLoadAction loadAction
         {
-            get => (MTLLoadAction)uint_objc_msgSend(NativePtr, Selectors.loadAction);
-            set => objc_msgSend(NativePtr, Selectors.setLoadAction, (uint)value);
+            get => (MTLLoadAction)nuint_objc_msgSend(NativePtr, Selectors.loadAction);
+            set => objc_msgSend(NativePtr, Selectors.setLoadAction, (nuint)value);
         }
 
         public MTLStoreAction storeAction
         {
-            get => (MTLStoreAction)uint_objc_msgSend(NativePtr, Selectors.storeAction);
-            set => objc_msgSend(NativePtr, Selectors.setStoreAction, (uint)value);
+            get => (MTLStoreAction)nuint_objc_msgSend(NativePtr, Selectors.storeAction);
+            set => objc_msgSend(NativePtr, Selectors.setStoreAction, (nuint)value);
         }
 
         public double clearDepth

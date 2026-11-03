@@ -33,8 +33,8 @@ namespace Veldrid.MetalBindings
 
         public MTLPixelFormat pixelFormat
         {
-            get => (MTLPixelFormat)uint_objc_msgSend(NativePtr, sel_pixelFormat);
-            set => objc_msgSend(NativePtr, sel_setPixelFormat, (uint)value);
+            get => (MTLPixelFormat)nuint_objc_msgSend(NativePtr, sel_pixelFormat);
+            set => objc_msgSend(NativePtr, sel_setPixelFormat, (nuint)value);
         }
 
         public Bool8 framebufferOnly

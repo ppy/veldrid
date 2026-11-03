@@ -13,12 +13,12 @@ namespace Veldrid.MetalBindings
         {
             get
             {
-                IntPtr ptr = IntPtr_objc_msgSend(NativePtr, Selectors.objectAtIndexedSubscript, index);
+                IntPtr ptr = IntPtr_objc_msgSend(NativePtr, Selectors.objectAtIndexedSubscript, (nuint)index);
                 return new MTLRenderPipelineColorAttachmentDescriptor(ptr);
             }
             set
             {
-                objc_msgSend(NativePtr, Selectors.setObjectAtIndexedSubscript, value.NativePtr, index);
+                objc_msgSend(NativePtr, Selectors.setObjectAtIndexedSubscript, value.NativePtr, (nuint)index);
             }
         }
     }
