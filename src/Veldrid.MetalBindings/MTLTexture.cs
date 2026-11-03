@@ -36,7 +36,7 @@ namespace Veldrid.MetalBindings
             NSRange sliceRange)
         {
             IntPtr ret = IntPtr_objc_msgSend(NativePtr, sel_newTextureView,
-                (uint)pixelFormat, (uint)textureType, levelRange, sliceRange);
+                (nuint)pixelFormat, (nuint)textureType, levelRange, sliceRange);
             return new MTLTexture(ret);
         }
 

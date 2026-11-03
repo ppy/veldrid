@@ -165,6 +165,8 @@ namespace Veldrid.MetalBindings
         [DllImport(ObjCLibrary, EntryPoint = "objc_msgSend")]
         public static extern Bool8 bool8_objc_msgSend(IntPtr receiver, Selector selector, uint a);
         [DllImport(ObjCLibrary, EntryPoint = "objc_msgSend")]
+        public static extern nuint nuint_objc_msgSend(IntPtr receiver, Selector selector);
+        [DllImport(ObjCLibrary, EntryPoint = "objc_msgSend")]
         public static extern uint uint_objc_msgSend(IntPtr receiver, Selector selector);
         [DllImport(ObjCLibrary, EntryPoint = "objc_msgSend")]
         public static extern float float_objc_msgSend(IntPtr receiver, Selector selector);
@@ -179,6 +181,8 @@ namespace Veldrid.MetalBindings
         public static extern IntPtr IntPtr_objc_msgSend(IntPtr receiver, Selector selector, IntPtr a);
         [DllImport(ObjCLibrary, EntryPoint = "objc_msgSend")]
         public static extern IntPtr IntPtr_objc_msgSend(IntPtr receiver, Selector selector, IntPtr a, out NSError error);
+        [DllImport(ObjCLibrary, EntryPoint = "objc_msgSend")]
+        public static extern IntPtr IntPtr_objc_msgSend(IntPtr receiver, Selector selector, nuint a, nuint b, NSRange c, NSRange d);
         [DllImport(ObjCLibrary, EntryPoint = "objc_msgSend")]
         public static extern IntPtr IntPtr_objc_msgSend(IntPtr receiver, Selector selector, uint a, uint b, NSRange c, NSRange d);
         [DllImport(ObjCLibrary, EntryPoint = "objc_msgSend")]
