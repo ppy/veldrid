@@ -11,8 +11,8 @@ namespace Veldrid.MetalBindings
 
         public MTLVertexStepFunction stepFunction
         {
-            get => (MTLVertexStepFunction)uint_objc_msgSend(NativePtr, sel_stepFunction);
-            set => objc_msgSend(NativePtr, sel_setStepFunction, (uint)value);
+            get => (MTLVertexStepFunction)nuint_objc_msgSend(NativePtr, sel_stepFunction);
+            set => objc_msgSend(NativePtr, sel_setStepFunction, (nuint)value);
         }
 
         public UIntPtr stride

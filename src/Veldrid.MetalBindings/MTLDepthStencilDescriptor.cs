@@ -10,8 +10,8 @@ namespace Veldrid.MetalBindings
 
         public MTLCompareFunction depthCompareFunction
         {
-            get => (MTLCompareFunction)uint_objc_msgSend(NativePtr, sel_depthCompareFunction);
-            set => objc_msgSend(NativePtr, sel_setDepthCompareFunction, (uint)value);
+            get => (MTLCompareFunction)nuint_objc_msgSend(NativePtr, sel_depthCompareFunction);
+            set => objc_msgSend(NativePtr, sel_setDepthCompareFunction, (nuint)value);
         }
 
         public Bool8 depthWriteEnabled

@@ -19,8 +19,8 @@ namespace Veldrid.MetalBindings
 
         public MTLColorWriteMask writeMask
         {
-            get => (MTLColorWriteMask)uint_objc_msgSend(NativePtr, sel_writeMask);
-            set => objc_msgSend(NativePtr, sel_setWriteMask, (uint)value);
+            get => (MTLColorWriteMask)nuint_objc_msgSend(NativePtr, sel_writeMask);
+            set => objc_msgSend(NativePtr, sel_setWriteMask, (nuint)value);
         }
 
         public Bool8 blendingEnabled
@@ -31,38 +31,38 @@ namespace Veldrid.MetalBindings
 
         public MTLBlendOperation alphaBlendOperation
         {
-            get => (MTLBlendOperation)uint_objc_msgSend(NativePtr, sel_alphaBlendOperation);
-            set => objc_msgSend(NativePtr, sel_setAlphaBlendOperation, (uint)value);
+            get => (MTLBlendOperation)nuint_objc_msgSend(NativePtr, sel_alphaBlendOperation);
+            set => objc_msgSend(NativePtr, sel_setAlphaBlendOperation, (nuint)value);
         }
 
         public MTLBlendOperation rgbBlendOperation
         {
-            get => (MTLBlendOperation)uint_objc_msgSend(NativePtr, sel_rgbBlendOperation);
-            set => objc_msgSend(NativePtr, sel_setRGBBlendOperation, (uint)value);
+            get => (MTLBlendOperation)nuint_objc_msgSend(NativePtr, sel_rgbBlendOperation);
+            set => objc_msgSend(NativePtr, sel_setRGBBlendOperation, (nuint)value);
         }
 
         public MTLBlendFactor destinationAlphaBlendFactor
         {
-            get => (MTLBlendFactor)uint_objc_msgSend(NativePtr, sel_destinationAlphaBlendFactor);
-            set => objc_msgSend(NativePtr, sel_setDestinationAlphaBlendFactor, (uint)value);
+            get => (MTLBlendFactor)nuint_objc_msgSend(NativePtr, sel_destinationAlphaBlendFactor);
+            set => objc_msgSend(NativePtr, sel_setDestinationAlphaBlendFactor, (nuint)value);
         }
 
         public MTLBlendFactor destinationRGBBlendFactor
         {
-            get => (MTLBlendFactor)uint_objc_msgSend(NativePtr, sel_destinationRGBBlendFactor);
-            set => objc_msgSend(NativePtr, sel_setDestinationRGBBlendFactor, (uint)value);
+            get => (MTLBlendFactor)nuint_objc_msgSend(NativePtr, sel_destinationRGBBlendFactor);
+            set => objc_msgSend(NativePtr, sel_setDestinationRGBBlendFactor, (nuint)value);
         }
 
         public MTLBlendFactor sourceAlphaBlendFactor
         {
-            get => (MTLBlendFactor)uint_objc_msgSend(NativePtr, sel_sourceAlphaBlendFactor);
-            set => objc_msgSend(NativePtr, sel_setSourceAlphaBlendFactor, (uint)value);
+            get => (MTLBlendFactor)nuint_objc_msgSend(NativePtr, sel_sourceAlphaBlendFactor);
+            set => objc_msgSend(NativePtr, sel_setSourceAlphaBlendFactor, (nuint)value);
         }
 
         public MTLBlendFactor sourceRGBBlendFactor
         {
-            get => (MTLBlendFactor)uint_objc_msgSend(NativePtr, sel_sourceRGBBlendFactor);
-            set => objc_msgSend(NativePtr, sel_setSourceRGBBlendFactor, (uint)value);
+            get => (MTLBlendFactor)nuint_objc_msgSend(NativePtr, sel_sourceRGBBlendFactor);
+            set => objc_msgSend(NativePtr, sel_setSourceRGBBlendFactor, (nuint)value);
         }
 
         private static readonly Selector sel_isBlendingEnabled = "isBlendingEnabled";

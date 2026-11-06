@@ -11,8 +11,8 @@ namespace Veldrid.MetalBindings
 
         public MTLTextureType textureType
         {
-            get => (MTLTextureType)uint_objc_msgSend(NativePtr, sel_textureType);
-            set => objc_msgSend(NativePtr, sel_setTextureType, (uint)value);
+            get => (MTLTextureType)nuint_objc_msgSend(NativePtr, sel_textureType);
+            set => objc_msgSend(NativePtr, sel_setTextureType, (nuint)value);
         }
 
         public MTLPixelFormat pixelFormat
@@ -59,26 +59,26 @@ namespace Veldrid.MetalBindings
 
         public MTLResourceOptions resourceOptions
         {
-            get => (MTLResourceOptions)uint_objc_msgSend(NativePtr, sel_resourceOptions);
-            set => objc_msgSend(NativePtr, sel_setResourceOptions, (uint)value);
+            get => (MTLResourceOptions)nuint_objc_msgSend(NativePtr, sel_resourceOptions);
+            set => objc_msgSend(NativePtr, sel_setResourceOptions, (nuint)value);
         }
 
         public MTLCPUCacheMode cpuCacheMode
         {
-            get => (MTLCPUCacheMode)uint_objc_msgSend(NativePtr, sel_cpuCacheMode);
-            set => objc_msgSend(NativePtr, sel_setCpuCacheMode, (uint)value);
+            get => (MTLCPUCacheMode)nuint_objc_msgSend(NativePtr, sel_cpuCacheMode);
+            set => objc_msgSend(NativePtr, sel_setCpuCacheMode, (nuint)value);
         }
 
         public MTLStorageMode storageMode
         {
-            get => (MTLStorageMode)uint_objc_msgSend(NativePtr, sel_storageMode);
-            set => objc_msgSend(NativePtr, sel_setStorageMode, (uint)value);
+            get => (MTLStorageMode)nuint_objc_msgSend(NativePtr, sel_storageMode);
+            set => objc_msgSend(NativePtr, sel_setStorageMode, (nuint)value);
         }
 
         public MTLTextureUsage textureUsage
         {
-            get => (MTLTextureUsage)uint_objc_msgSend(NativePtr, sel_textureUsage);
-            set => objc_msgSend(NativePtr, sel_setTextureUsage, (uint)value);
+            get => (MTLTextureUsage)nuint_objc_msgSend(NativePtr, sel_textureUsage);
+            set => objc_msgSend(NativePtr, sel_setTextureUsage, (nuint)value);
         }
 
         private static readonly Selector sel_textureType = "textureType";

@@ -35,14 +35,14 @@ namespace Veldrid.MetalBindings
 
         public MTLPixelFormat depthAttachmentPixelFormat
         {
-            get => (MTLPixelFormat)uint_objc_msgSend(NativePtr, sel_depthAttachmentPixelFormat);
-            set => objc_msgSend(NativePtr, sel_setDepthAttachmentPixelFormat, (uint)value);
+            get => (MTLPixelFormat)nuint_objc_msgSend(NativePtr, sel_depthAttachmentPixelFormat);
+            set => objc_msgSend(NativePtr, sel_setDepthAttachmentPixelFormat, (nuint)value);
         }
 
         public MTLPixelFormat stencilAttachmentPixelFormat
         {
-            get => (MTLPixelFormat)uint_objc_msgSend(NativePtr, sel_stencilAttachmentPixelFormat);
-            set => objc_msgSend(NativePtr, sel_setStencilAttachmentPixelFormat, (uint)value);
+            get => (MTLPixelFormat)nuint_objc_msgSend(NativePtr, sel_stencilAttachmentPixelFormat);
+            set => objc_msgSend(NativePtr, sel_setStencilAttachmentPixelFormat, (nuint)value);
         }
 
         public UIntPtr sampleCount

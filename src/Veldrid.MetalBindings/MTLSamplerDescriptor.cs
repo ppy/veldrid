@@ -11,38 +11,38 @@ namespace Veldrid.MetalBindings
 
         public MTLSamplerAddressMode rAddressMode
         {
-            get => (MTLSamplerAddressMode)uint_objc_msgSend(NativePtr, sel_rAddressMode);
-            set => objc_msgSend(NativePtr, sel_setRAddressMode, (uint)value);
+            get => (MTLSamplerAddressMode)nuint_objc_msgSend(NativePtr, sel_rAddressMode);
+            set => objc_msgSend(NativePtr, sel_setRAddressMode, (nuint)value);
         }
 
         public MTLSamplerAddressMode sAddressMode
         {
-            get => (MTLSamplerAddressMode)uint_objc_msgSend(NativePtr, sel_sAddressMode);
-            set => objc_msgSend(NativePtr, sel_setSAddressMode, (uint)value);
+            get => (MTLSamplerAddressMode)nuint_objc_msgSend(NativePtr, sel_sAddressMode);
+            set => objc_msgSend(NativePtr, sel_setSAddressMode, (nuint)value);
         }
 
         public MTLSamplerAddressMode tAddressMode
         {
-            get => (MTLSamplerAddressMode)uint_objc_msgSend(NativePtr, sel_tAddressMode);
-            set => objc_msgSend(NativePtr, sel_setTAddressMode, (uint)value);
+            get => (MTLSamplerAddressMode)nuint_objc_msgSend(NativePtr, sel_tAddressMode);
+            set => objc_msgSend(NativePtr, sel_setTAddressMode, (nuint)value);
         }
 
         public MTLSamplerMinMagFilter minFilter
         {
-            get => (MTLSamplerMinMagFilter)uint_objc_msgSend(NativePtr, sel_minFilter);
-            set => objc_msgSend(NativePtr, sel_setMinFilter, (uint)value);
+            get => (MTLSamplerMinMagFilter)nuint_objc_msgSend(NativePtr, sel_minFilter);
+            set => objc_msgSend(NativePtr, sel_setMinFilter, (nuint)value);
         }
 
         public MTLSamplerMinMagFilter magFilter
         {
-            get => (MTLSamplerMinMagFilter)uint_objc_msgSend(NativePtr, sel_magFilter);
-            set => objc_msgSend(NativePtr, sel_setMagFilter, (uint)value);
+            get => (MTLSamplerMinMagFilter)nuint_objc_msgSend(NativePtr, sel_magFilter);
+            set => objc_msgSend(NativePtr, sel_setMagFilter, (nuint)value);
         }
 
         public MTLSamplerMipFilter mipFilter
         {
-            get => (MTLSamplerMipFilter)uint_objc_msgSend(NativePtr, sel_mipFilter);
-            set => objc_msgSend(NativePtr, sel_setMipFilter, (uint)value);
+            get => (MTLSamplerMipFilter)nuint_objc_msgSend(NativePtr, sel_mipFilter);
+            set => objc_msgSend(NativePtr, sel_setMipFilter, (nuint)value);
         }
 
         public float lodMinClamp
@@ -71,14 +71,14 @@ namespace Veldrid.MetalBindings
 
         public MTLCompareFunction compareFunction
         {
-            get => (MTLCompareFunction)uint_objc_msgSend(NativePtr, sel_compareFunction);
-            set => objc_msgSend(NativePtr, sel_setCompareFunction, (uint)value);
+            get => (MTLCompareFunction)nuint_objc_msgSend(NativePtr, sel_compareFunction);
+            set => objc_msgSend(NativePtr, sel_setCompareFunction, (nuint)value);
         }
 
         public MTLSamplerBorderColor borderColor
         {
-            get => (MTLSamplerBorderColor)uint_objc_msgSend(NativePtr, sel_borderColor);
-            set => objc_msgSend(NativePtr, sel_setBorderColor, (uint)value);
+            get => (MTLSamplerBorderColor)nuint_objc_msgSend(NativePtr, sel_borderColor);
+            set => objc_msgSend(NativePtr, sel_setBorderColor, (nuint)value);
         }
 
         private static readonly Selector sel_rAddressMode = "rAddressMode";

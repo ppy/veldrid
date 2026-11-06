@@ -9,26 +9,26 @@ namespace Veldrid.MetalBindings
 
         public MTLStencilOperation stencilFailureOperation
         {
-            get => (MTLStencilOperation)uint_objc_msgSend(NativePtr, sel_stencilFailureOperation);
-            set => objc_msgSend(NativePtr, sel_setStencilFailureOperation, (uint)value);
+            get => (MTLStencilOperation)nuint_objc_msgSend(NativePtr, sel_stencilFailureOperation);
+            set => objc_msgSend(NativePtr, sel_setStencilFailureOperation, (nuint)value);
         }
 
         public MTLStencilOperation depthFailureOperation
         {
-            get => (MTLStencilOperation)uint_objc_msgSend(NativePtr, sel_depthFailureOperation);
-            set => objc_msgSend(NativePtr, sel_setDepthFailureOperation, (uint)value);
+            get => (MTLStencilOperation)nuint_objc_msgSend(NativePtr, sel_depthFailureOperation);
+            set => objc_msgSend(NativePtr, sel_setDepthFailureOperation, (nuint)value);
         }
 
         public MTLStencilOperation depthStencilPassOperation
         {
-            get => (MTLStencilOperation)uint_objc_msgSend(NativePtr, sel_depthStencilPassOperation);
-            set => objc_msgSend(NativePtr, sel_setDepthStencilPassOperation, (uint)value);
+            get => (MTLStencilOperation)nuint_objc_msgSend(NativePtr, sel_depthStencilPassOperation);
+            set => objc_msgSend(NativePtr, sel_setDepthStencilPassOperation, (nuint)value);
         }
 
         public MTLCompareFunction stencilCompareFunction
         {
-            get => (MTLCompareFunction)uint_objc_msgSend(NativePtr, sel_stencilCompareFunction);
-            set => objc_msgSend(NativePtr, sel_setStencilCompareFunction, (uint)value);
+            get => (MTLCompareFunction)nuint_objc_msgSend(NativePtr, sel_stencilCompareFunction);
+            set => objc_msgSend(NativePtr, sel_setStencilCompareFunction, (nuint)value);
         }
 
         public uint readMask

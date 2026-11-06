@@ -11,8 +11,8 @@ namespace Veldrid.MetalBindings
 
         public MTLVertexFormat format
         {
-            get => (MTLVertexFormat)uint_objc_msgSend(NativePtr, sel_format);
-            set => objc_msgSend(NativePtr, sel_setFormat, (uint)value);
+            get => (MTLVertexFormat)nuint_objc_msgSend(NativePtr, sel_format);
+            set => objc_msgSend(NativePtr, sel_setFormat, (nuint)value);
         }
 
         public UIntPtr offset
